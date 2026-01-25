@@ -18,17 +18,6 @@ button {
     grid-template-columns: minmax(600px, 3fr) 7fr;
 }
 
-/* @media (max-width: 768px) {
-    .main-grid {
-        grid-template-columns: 1fr;
-    }
-} */
-/* @media (max-width: 2000px) {
-    .main-grid {
-        grid-template-columns: 1fr;
-    }
-} */
-
 .main-grid .left-pane {
     display: flex;
     flex-direction: column;
@@ -36,15 +25,17 @@ button {
     /* min-width: 800px; */
 }
 
-/* .main-grid .left-pane .add-file {
-    margin-top: auto;
-} */
+.dropzone {
+    background-color: var(--pico-card-background-color);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+}
 
-/* .main-grid .left-pane article {
-    min-height: 100%;
-} */
+.dropzone .dz-details {
+    background-color: var(--pico-code-background-color);
+}
 
-.file-list {
+/* .file-list {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -64,4 +55,4 @@ button {
 .file-list button {
     padding: 0.2rem;
     line-height: 0;
-}
+} */

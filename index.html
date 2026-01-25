@@ -4,7 +4,10 @@
     	<meta charset="utf-8">
     	<meta name="viewport" content="width=device-width, initial-scale=1">
     	<meta name="color-scheme" content="light dark">
+        <script src="js/dropzone.min.js"></script>
+        <script src="js/main.js"></script>
     	<link rel="stylesheet" href="css/pico.cyan.min.css">
+        <link rel="stylesheet" href="css/dropzone.min.css">
 		<link rel="stylesheet" href="css/main.css">
     	<title>Hello world!</title>
 	</head>
@@ -22,13 +25,11 @@
     	<main class="container-fluid">
        		<div class="grid main-grid">
         		<div class="left-pane">
-					<ul class="file-list">
+                    <form action="#" class="dropzone" id="eisupload"></form>
+					<!-- <ul class="file-list">
 						<li>
 							<div>RawEISGamry_00-01A_22-14-001.dat</div>
 							<div>
-								<!-- <button class="secondary">
-									<svg width="20" height="20"><use href="#icon-edit"></use></svg>
-								</button> -->
 								<button class="secondary del">
 									<svg width="20" height="20"><use href="#icon-del"></use></svg>
 								</button>
@@ -36,7 +37,7 @@
 						</li>
 					</ul>
 
-					<button class="primary add-file"><svg width="20" height="20"><use href="#icon-add"></use></svg>Add EIS test file (*.csv, *.dta)</button>
+					<button class="primary add-file"><svg width="20" height="20"><use href="#icon-add"></use></svg>Add EIS test file (*.csv, *.dta)</button> -->
 				</div>
         		<div class="right-pane">B</div>
        		</div>
