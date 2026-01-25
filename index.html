@@ -5,6 +5,7 @@
     	<meta name="viewport" content="width=device-width, initial-scale=1">
     	<meta name="color-scheme" content="light dark">
         <script src="js/dropzone.min.js"></script>
+        <script src="js/plotly-3.3.0.min.js"></script>
         <script src="js/main.js"></script>
     	<link rel="stylesheet" href="css/pico.cyan.min.css">
         <link rel="stylesheet" href="css/dropzone.min.css">
@@ -39,7 +40,9 @@
 
 					<button class="primary add-file"><svg width="20" height="20"><use href="#icon-add"></use></svg>Add EIS test file (*.csv, *.dta)</button> -->
 				</div>
-        		<div class="right-pane">B</div>
+        		<div class="right-pane">
+                    <div id="eisplot" class="eisplot"></div>
+                </div>
        		</div>
 		</main>
 		<!-- <dialog open>

@@ -3,7 +3,7 @@ EIS Data handling
 */
 
 function parseFile(text, filename) {
-    if (filename.endWith('.dta')) {
+    if (filename.endsWith('.dta')) {
         return parseGamryDTA(text);
     } else {
         return parseStandardizedCSV(text);
@@ -38,6 +38,18 @@ function parseGamryDTA(text) {
     return { metadata: {}, data: {} };
 }
 
+/*
+Plotting EIS data with plotly.js
+*/
+Plotly.newPlot('eisplot', [{
+    x: data.map(d => d.zreal),
+    y: data.map(d => -d.zimag),
+    mode: 'markers'
+}], {
+    xaxis: { title: "Z' / Ohm" },
+    yaxis: { title: "-Z' / Ohm", scaleanchor: 'x', scaleratio: 1 },
+})
+
 
 /*
 Dropzone configuration for easy drag-and-drop EIS data upload
@@ -53,7 +65,7 @@ Dropzone.options.eisupload = {
     autoProcessQueue: false,
 
     init: function() {
-        this.on('addedFile', function(file) {
+        this.on('addedfile', function(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const result = parseFile(e.target.result, file.name);
