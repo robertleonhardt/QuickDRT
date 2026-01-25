@@ -41,14 +41,41 @@ function parseGamryDTA(text) {
 /*
 Plotting EIS data with plotly.js
 */
-Plotly.newPlot('eisplot', [{
-    x: data.map(d => d.zreal),
-    y: data.map(d => -d.zimag),
-    mode: 'markers'
-}], {
-    xaxis: { title: "Z' / Ohm" },
-    yaxis: { title: "-Z' / Ohm", scaleanchor: 'x', scaleratio: 1 },
-})
+function getColors() {
+    const style = getComputedStyle(document.body);
+    return {
+        text: style.getPropertyValue('--pico-color').trim(),
+        grid: style.getPropertyValue('--pico-muted-border-color').trim(),
+    }
+}
+
+function plotEISdata(data) {
+    // Get colors of the website so the plot is nicer implemented
+    const colors = getColors();
+
+    // Setup EIS plot
+    Plotly.newPlot('eisplot', [{
+        x: data.map(d => d.zreal),
+        y: data.map(d => -d.zimag),
+        mode: 'markers'
+    }], {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: colors.text },
+        xaxis: { 
+            title: "Z' / Ohm",
+            gridcolors: colors.grid,
+            zerolinecolor: colors.grid,
+        },
+        yaxis: { 
+            title: "-Z' / Ohm", 
+            scaleanchor: 'x', 
+            scaleratio: 1,
+            gridcolors: colors.grid,
+            zerolinecolor: colors.grid,
+        },
+    })
+}
 
 
 /*
@@ -70,6 +97,7 @@ Dropzone.options.eisupload = {
             reader.onload = function(e) {
                 const result = parseFile(e.target.result, file.name);
                 console.log(result);
+                plotEISdata(result.data)
             };
             reader.readAsText(file)
         })
