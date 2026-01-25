@@ -50,13 +50,16 @@ Dropzone.options.eisupload = {
 
     dictDefaultMessage: 'Drop your EIS file (Gamry) here to proceed',
 
+    autoProcessQueue: false,
+
     init: function() {
         this.on('addedFile', function(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const result = parseFile(e.target.result, file.name);
                 console.log(result);
-            }
+            };
+            reader.readAsText(file)
         })
     },
 
