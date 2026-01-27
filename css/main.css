@@ -38,6 +38,8 @@ button {
 div.eisplot {
     height: 600px;
     background-color: var(--pico-card-background-color);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
 }
 
 /* .file-list {

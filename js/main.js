@@ -46,6 +46,9 @@ function getColors() {
     return {
         text: style.getPropertyValue('--pico-color').trim(),
         grid: style.getPropertyValue('--pico-muted-border-color').trim(),
+        frame: style.getPropertyValue('--pico-contrast-border').trim(),
+        accent: style.getPropertyValue('--pico-primary').trim(),
+        background: style.getPropertyValue('--pico-background-color').trim(),
     }
 }
 
@@ -57,22 +60,44 @@ function plotEISdata(data) {
     Plotly.newPlot('eisplot', [{
         x: data.map(d => d.zreal),
         y: data.map(d => -d.zimag),
-        mode: 'markers'
+        mode: 'lines+markers',
+        line: {
+            color: colors.accent,
+            width: 1.5,
+        },
+        marker: {
+            color: colors.background,
+            size: 5,
+            line: {
+                color: colors.accent,
+                width: 1.5,
+            }
+        }
     }], {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: colors.text },
         xaxis: { 
             title: "Z' / Ohm",
-            gridcolors: colors.grid,
+            gridcolor: colors.grid,
             zerolinecolor: colors.grid,
+            showline: true,
+            linecolor: colors.frame,
+            linewidth: 1,
+            ticks: 'inside',
+            mirror: 'allticks',
         },
         yaxis: { 
-            title: "-Z' / Ohm", 
+            title: "-Z'' / Ohm", 
             scaleanchor: 'x', 
             scaleratio: 1,
-            gridcolors: colors.grid,
-            zerolinecolor: colors.grid,
+            gridcolor: colors.grid,
+            zerolinecolor: colors.frame,
+            showline: true,
+            linecolor: colors.frame,
+            linewidth: 1,
+            ticks: 'inside',
+            mirror: 'allticks',
         },
     })
 }
@@ -93,12 +118,17 @@ Dropzone.options.eisupload = {
 
     init: function() {
         this.on('addedfile', function(file) {
+            // while (this.file.length > 1) {
+            //     this.removeFile(this.files[0])
+            // }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 const result = parseFile(e.target.result, file.name);
                 console.log(result);
                 plotEISdata(result.data)
             };
+
             reader.readAsText(file)
         })
     },
