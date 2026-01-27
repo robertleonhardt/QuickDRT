@@ -110,11 +110,10 @@ Dropzone.options.eisupload = {
     // Config
     paramName: 'file',
     maxFileSize: 2,
-    // maxFiles: 1,
-
+    // maxFiles: 1, // carried by init function
     dictDefaultMessage: 'Drop your EIS file (Gamry) here to proceed',
-
     autoProcessQueue: false,
+    previewTemplate: document.getElementById('dztemplate').innerHTML,
 
     init: function() {
         this.on('addedfile', function(file) {
@@ -131,6 +130,10 @@ Dropzone.options.eisupload = {
 
             reader.readAsText(file)
         })
+    },
+
+    addedfile: function(file) {
+        file.previewElement = Dropzone.createElement(this.options.previewTemplate);
     },
 
     accept: function(file, done) {
