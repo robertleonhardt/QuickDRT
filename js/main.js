@@ -62,6 +62,47 @@ function plotEISdata(data) {
     })
 }
 
+function plotDRTdata(data) {
+    // Get colors of the website so the plot is nicer implemented
+    const colors = getColors();
+
+    // Setup EIS plot
+    Plotly.newPlot('drtplot', [{
+        x: data.tau_s, //data.map(d => d.tau_s),
+        y: data.gamma_hat_Ohm, //data.map(d => d.gamma_hat_Ohm),
+        mode: 'lines',
+        line: {
+            color: colors.accent,
+            width: 1.5,
+        },
+    }], {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: colors.text },
+        xaxis: { 
+            type: 'log',
+            title: "Z' / Ohm",
+            gridcolor: colors.grid,
+            zerolinecolor: colors.grid,
+            showline: true,
+            linecolor: colors.frame,
+            linewidth: 1,
+            ticks: 'inside',
+            mirror: 'allticks',
+        },
+        yaxis: { 
+            title: "-Z'' / Ohm", 
+            gridcolor: colors.grid,
+            zerolinecolor: colors.frame,
+            showline: true,
+            linecolor: colors.frame,
+            linewidth: 1,
+            ticks: 'inside',
+            mirror: 'allticks',
+        },
+    })
+}
+
 
 /*
 Dropzone configuration for easy drag-and-drop EIS data upload
@@ -82,9 +123,26 @@ Dropzone.options.eisupload = {
 
             const reader = new FileReader();
             reader.onload = function(e) {
+                // Load EIS data
                 const result = parseFile(e.target.result, file.name);
+
+                // Setup DRT
+                const frequency_Hz = result.data.map(d => d.freq);
+                const impedance_Ohm = {
+                    re: result.data.map(d => d.zreal),
+                    im: result.data.map(d => d.zimag)
+                };
+
+                const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm, {
+                    alpha: 0.92,
+                    tau_min_s: 1e-5,
+                    tau_max_s: 1e5
+                })
+
+                // Show everything 
                 console.log(result);
                 plotEISdata(result.data);
+                plotDRTdata(drt);
                 updateMetadataDispaly(result.metadata, file)
             };
 
