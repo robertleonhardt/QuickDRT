@@ -42,6 +42,20 @@ div.eisplot {
     border-radius: var(--pico-border-radius);
 }
 
+dl.metadata {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25rem 1rem;
+}
+
+dl.metadata dt {
+    font-weight: 600;
+}
+
+dl.metadata dd {
+    margin: 0;
+}
+
 /* .file-list {
     list-style: none;
     margin: 0;

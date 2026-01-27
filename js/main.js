@@ -14,8 +14,8 @@ function parseStandardizedCSV(text) {
     const lines = text.trim().split('\n');
 
     // 0th line is JSON metadata for the file
-    const metaLine = lines[0]
-    const metadata = JSON.parse(metaLine.slice(1)); // Remove leading #
+    const metaline = lines[0]
+    const metadata = JSON.parse(metaline.slice(1)); // Remove leading #
 
     // 1st line is ignored, since structure is clear; after that, there should be data
     const data = [];
