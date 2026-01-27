@@ -136,7 +136,7 @@ Dropzone.options.eisupload = {
                 const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm, {
                     alpha: 0.92,
                     tau_min_s: 1e-5,
-                    tau_max_s: 1e5
+                    tau_max_s: 1e3
                 })
 
                 // Show everything 
