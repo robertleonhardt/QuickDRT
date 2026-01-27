@@ -109,11 +109,10 @@ Dropzone configuration for easy drag-and-drop EIS data upload
 Dropzone.options.eisupload = {
     // Config
     paramName: 'file',
-    maxFileSize: 2,
-    // maxFiles: 1, // carried by init function
     dictDefaultMessage: 'Drop your EIS file (Gamry) here to proceed',
     autoProcessQueue: false,
-    previewTemplate: document.getElementById('dz-template').innerHTML,
+    // previewTemplate: document.getElementById('dz-template').innerHTML,
+    previewsContainer: false,
 
     init: function() {
         this.on('addedfile', function(file) {
@@ -129,12 +128,16 @@ Dropzone.options.eisupload = {
             };
 
             reader.readAsText(file)
-        })
-    },
 
-    // addedfile: function(file) {
-    //     file.previewElement = Dropzone.createElement(this.options.previewTemplate);
-    // },
+            document.querySelector('details#testdetails').open = true;
+        });
+
+        // this.on('removedfile', function() {
+        //     if (this.files.length === 0) {
+        //         this.element.querySelector('.dz-default.dz-message span').textContent = 'Drop another file here to replace the existing one';
+        //     }
+        // });
+    },
 
     accept: function(file, done) {
         if (file.name == 'biologic.csv') {
