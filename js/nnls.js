@@ -1,6 +1,7 @@
 /**
  * Non-negative least squares solver (NNLS)
  * Lawson-Hansin algorithm implementation for js
+ * The implementation was supported by Claude Code, btw.
  * 
  * Solves: min||Ax-b||² with x >= 0 in all components
  * 
@@ -59,13 +60,71 @@ function nnls(A, b, options = {}) {
             // Solve leas squares: A[:,P] * z_P = b
             const pIndices = Array.from(P).sort((a, b) => a - b)
             const Ap = extractColumns(A, pIndices);
-            const zP = solveLeastSuqares(Ap, b);
+            const zP = solveLeastSquares(Ap, b);
 
-            break;
+            // Check if all z_P >= 0
+            let allPositive = true;
+            for (let i = 0; i < zP.length; i++) {
+                if (zP[i] < tolerance) {
+                    allPositive = false;
+                    break;
+                }
+            }
+            
+            if (allPositive) {
+                // Accept solution
+                for (let i = 0; i < pIndices.length; i++) {
+                    x[pIndices[i]] = zP[i];
+                }
+                break;
+            }
+
+            // Find alpha: how far can we move toward z while staying >= 0
+            let alpha = Infinity;
+            let alphaIdx = -1;
+
+            for (let i = 0; i < pIndices.length; i++) {
+                const j = pIndices[i];
+                if (zP[i] <= tolerance) {
+                    const ratio = x[j] / (x[j] - zP[i] + 1e-15);
+                    if (ratio < alpha) {
+                        alpha = ratio;
+                        alphaIdx = j;
+                    }
+                }
+            }
+
+            // Update x: x = x + alpha*(z-x)
+            for (let i = 0; i < pIndices.length; i++) {
+                const j = pIndices[i];
+                x[j] = x[j] + alpha * (zP[i] - x[j]);
+            }
+
+            // Move indices with x = 0 from P to Z
+            for (const j of Array.from(P)) {
+                if (x[j] <= tolerance) {
+                    x[j] = 0;
+                    P.delete(j);
+                    Z.add(j);
+                }
+            }
+
+            if (P.size === 0) break;
         }
+
+        // Update gradient: w = A^T*(b-Ax)
+        const Ax = A.mmul(Matrix.columnVector(x)).to1DArray();
+        const residual = b.map((bi, i) => bi - Ax[i]);
+        w = At.mmul(Matrix.columnVector(residual)).to1DArray();
+
+        iter++;
     }
 
-    return { x: -12, residualNorm: 42 }
+    // Compute final residual norm
+    const Ax = A.mmul(Matrix.columnVector(x)).to1DArray();
+    const residualNorm = Math.sqrt(b.reduce((sum, bi, i) => sum + Math.pow(bi -Ax[i], 2), 0));
+
+    return { x, residualNorm }
 }
 
 /**
@@ -84,31 +143,9 @@ function extractColumns(A, indices) {
 /**
  * Ordinary leasr squares (min||Ax-b||²)
  */
-function solveLeastSuqares(A, b) {
-    const At = A.transpose();
-    const AtA = At.mmul(A);
-    const Atb = At.mmul(Matrix.columnVector(b));
-
-    // Solve AtA * x = Atb
-    // Using pseudo-inverse for numerical stability
-    try {
-        const solution = solveLinearSystem(AtA, Atb);
-        return solution.to1DArray();
-    } catch (e) {
-        // Fallback: use pseudo-inverse
-        const pinv = AtA.pseudoInverse();
-        return pinv.mmul(Atb).to1DArray();
-    }
-}
-
-/**
- * Solve linear system Ax = b using LU decomposition
- */
-function solveLinearSystem(A, b) {
-    // ml-matrix has solve() method
-    // If not available, fall back to pseudo-inverse
-    if (typeof A.solve === 'function') {
-        return A.solve(b);
-    }
-    return A.pseudoInverse().mmul(b);
+function solveLeastSquares(A, b) {
+    const QR = mlMatrix.QrDecomposition;
+    const qr = new QR(A);
+    const bVec = Matrix.columnVector(b);
+    return qr.solve(bVec).to1DArray();
 }

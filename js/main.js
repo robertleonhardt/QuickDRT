@@ -114,15 +114,3 @@ function updateMetadataDispaly(metadata, file) {
     document.getElementById('metadata-label').textContent = metadata.label;
     document.getElementById('metadata-date').textContent = metadata.date;
 }
-
-// A * x = b, where x should be [1, 2]
-const A1 = new Matrix([
-    [1, 0],
-    [0, 1],
-    [1, 1]
-]);
-const b1 = [1, 2, 3];
-
-const result1 = nnls(A1, b1);
-console.log('Test 1:', result1.x);
-// Expected: [1, 2] (or very close)
