@@ -290,6 +290,7 @@ class DRT {
      * @private
      */
     _refine_weight_vector(tau_lower, tau_upper) {
+        // 1. Boundary trimming
         if (tau_lower !== null) {
             for (let i = 0; i < this._tau_s.length; i++) {
                 if (this._tau_s[i] < tau_lower) {
@@ -303,6 +304,74 @@ class DRT {
                     this._weight_vector[i] = 0;
                 }
             }
+        }
+
+        // 2. Noise removal - set small values (<0.1% of max) to zero
+        const maxWeight = Math.max(...this._weight_vector);
+        const noiseThreshold = 0.001 * maxWeight;
+        for (let i = 0; i < this._weight_vector.length; i++) {
+            if (this._weight_vector[i] < noiseThreshold) {
+                this._weight_vector[i] = 0;
+            }
+        }
+
+        // 3. Peak merging - consolidate neighboring nonzero values
+        // Only for non-identity basis (Cole-Cole, Gauss, etc.)
+        this._merge_peaks();
+    }
+
+    /**
+     * Merge neighboring nonzero weights into discrete peaks
+     * @private
+     */
+    _merge_peaks() {
+        const w = this._weight_vector;
+        const n = w.length;
+        
+        // Find contiguous nonzero regions
+        let i = 0;
+        while (i < n) {
+            // Skip zeros
+            if (w[i] === 0) {
+                i++;
+                continue;
+            }
+            
+            // Found start of a peak region
+            let peakStart = i;
+            let peakEnd = i;
+            let totalWeight = 0;
+            let weightedTauSum = 0;
+            
+            // Find extent of this peak (contiguous nonzero values)
+            while (peakEnd < n && w[peakEnd] > 0) {
+                totalWeight += w[peakEnd];
+                weightedTauSum += w[peakEnd] * this._ln_tau_tau0[peakEnd];
+                peakEnd++;
+            }
+            
+            // If peak spans multiple points, consolidate
+            if (peakEnd - peakStart > 1) {
+                // Find tau closest to weighted center
+                const centerLnTau = weightedTauSum / totalWeight;
+                let centerIdx = peakStart;
+                let minDist = Infinity;
+                
+                for (let j = peakStart; j < peakEnd; j++) {
+                    const dist = Math.abs(this._ln_tau_tau0[j] - centerLnTau);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        centerIdx = j;
+                    }
+                }
+                
+                // Zero out all but center, put total weight there
+                for (let j = peakStart; j < peakEnd; j++) {
+                    w[j] = (j === centerIdx) ? totalWeight : 0;
+                }
+            }
+            
+            i = peakEnd;
         }
     }
 

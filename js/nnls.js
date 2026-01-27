@@ -86,7 +86,10 @@ function nnls(A, b, options = {}) {
             for (let i = 0; i < pIndices.length; i++) {
                 const j = pIndices[i];
                 if (zP[i] <= tolerance) {
-                    const ratio = x[j] / (x[j] - zP[i] + 1e-15);
+                    // const ratio = x[j] / (x[j] - zP[i] + 1e-15);
+                    const diff = x[j] - zP[i];
+                    if (Math.abs(diff) < 1e-15) continue;  // Skip degenerate case
+                    const ratio = x[j] / diff;
                     if (ratio < alpha) {
                         alpha = ratio;
                         alphaIdx = j;
