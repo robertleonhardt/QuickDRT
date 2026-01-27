@@ -1,44 +1,4 @@
 /*
-EIS Data handling
-*/
-
-function parseFile(text, filename) {
-    if (filename.endsWith('.dta')) {
-        return parseGamryDTA(text);
-    } else {
-        return parseStandardizedCSV(text);
-    }
-}
-
-function parseStandardizedCSV(text) {
-    const lines = text.trim().split('\n');
-
-    // 0th line is JSON metadata for the file
-    const metaline = lines[0]
-    const metadata = JSON.parse(metaline.slice(1)); // Remove leading #
-
-    // 1st line is ignored, since structure is clear; after that, there should be data
-    const data = [];
-    for (let i = 2; i < lines.length; i++) {
-        const values = lines[i].split(',');
-        data.push({
-            freq: parseFloat(values[0]),
-            zreal: parseFloat(values[1]),
-            zimag: parseFloat(values[2]),
-            phi: parseFloat(values[3]),
-        })
-    }
-
-    return { metadata, data }
-}
-
-function parseGamryDTA(text) {
-    // Soon.
-    console.warn('Gamry parser yet to be implemented.');
-    return { metadata: {}, data: {} };
-}
-
-/*
 Plotting EIS data with plotly.js
 */
 function getColors() {
@@ -124,7 +84,8 @@ Dropzone.options.eisupload = {
             reader.onload = function(e) {
                 const result = parseFile(e.target.result, file.name);
                 console.log(result);
-                plotEISdata(result.data)
+                plotEISdata(result.data);
+                updateMetadataDispaly(result.metadata, file)
             };
 
             reader.readAsText(file)
@@ -147,3 +108,21 @@ Dropzone.options.eisupload = {
         }
     }
 };
+
+function updateMetadataDispaly(metadata, file) {
+    document.getElementById('metadata-filename').textContent = file.name;
+    document.getElementById('metadata-label').textContent = metadata.label;
+    document.getElementById('metadata-date').textContent = metadata.date;
+}
+
+// A * x = b, where x should be [1, 2]
+const A1 = new Matrix([
+    [1, 0],
+    [0, 1],
+    [1, 1]
+]);
+const b1 = [1, 2, 3];
+
+const result1 = nnls(A1, b1);
+console.log('Test 1:', result1.x);
+// Expected: [1, 2] (or very close)
