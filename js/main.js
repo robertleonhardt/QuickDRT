@@ -133,7 +133,7 @@ Dropzone.options.eisupload = {
                     im: result.data.map(d => d.zimag)
                 };
 
-                const drt = new DRT(frequency_Hz, impedance_Ohm);
+                const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm);
                 console.log(drt)
 
                 // const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm, {
