@@ -40,8 +40,11 @@ class DRT {
         }
 
         // Copy the sorted data again, since having a backup might be handy later on
-        this._origInputFrequencyData = this.inputFrequencyData;
-        this._origInputImpedanceData = this.inputImpedanceData;
+        this._origInputFrequencyData = [...this.inputFrequencyData];
+        this._origInputImpedanceData = {
+            re: [...this.inputImpedanceData.re],
+            im: [...this.inputImpedanceData.im]
+        };
 
         // Get the Ohmic resistance of the impedance data
         // slice().reverse() returns a copied, flipped version of the data
@@ -62,7 +65,7 @@ class DRT {
         this.frequencyData = this.frequencyData.filter((_, i) => inductionMask[i]);
         this.impedanceData = {
             re: this.impedanceData.re.filter((_, i) => inductionMask[i]),
-            im: this.impedanceData.re.filter((_, i) => inductionMask[i])
+            im: this.impedanceData.im.filter((_, i) => inductionMask[i])
         }
 
         // TD: Include diffusion offset algorithm from PyDRT
@@ -104,6 +107,8 @@ class DRT {
         // Config the solver
         const solvingData = options.solvingData ?? this.solvingData;
         const epsilon = options.epsilon ?? this.epsilon;
+        const tauMin = options.tauMin ?? this.tauMin;
+        const tauMax = options.tauMax ?? this.tauMax;
 
         // Get basic RC matrix and basis matrix
         this.rcKernelMatrix = this._getRCKernelMatrix();
@@ -133,7 +138,7 @@ class DRT {
         }
 
         // Apply regularization, if asked
-        if (this.epsilon) {
+        if (epsilon) {
             const regularizationMatrix = this._getRegularizationMatrix().mulS(this.epsilon)
             stackedKernelMatrix = this._vstack(stackedKernelMatrix, regularizationMatrix);
             stackedImpedanceVector = [...stackedImpedanceVector, ...Array(this.tau.length).fill(0)];
@@ -142,7 +147,16 @@ class DRT {
         // Solve like a NNLS
         const result = nnls(stackedKernelMatrix, stackedImpedanceVector);
 
-        this.wHat = result.x;
+        // Now, that we have the weight vector, we gonna refine it by capping values outside of whats interesting
+        // (see tauMin and tauMax) and merge neightboring weights to avoid "double peaks"
+        const wHatRaw = result.x;
+        const wHat = this._refineWeightVector(wHatRaw, tauMin, tauMax);
+
+        // We can now calculate the DRT (i.e., gamma hat)
+        const gammaHat = this.basisMatrix.mmul(Matrix.columnVector(wHat)).getColumn(0);
+
+        this.wHat = wHat;
+        this.gammaHat = gammaHat;
     }
 
     _getRCKernelMatrix() {
@@ -183,6 +197,55 @@ class DRT {
     _getRegularizationMatrix() {
         // This should be an identiy matrix
         return Matrix.eye(this.tau.length);
+    }
+
+    _refineWeightVector(wHatRaw, tauMin, tauMax) {
+        // Set all weight outside the specified range to zero
+        // Furthermore, eliminate very small values
+        const maxWHat = Math.max(...wHatRaw);
+        const wHatConsiderationThreshold = 0.001 * maxWHat;
+        const wHatRefined = wHatRaw.map((wHat, i) => {
+            const tau = this.tau[i];
+            if (tau < tauMin || tau > tauMax || wHat < wHatConsiderationThreshold) {
+                return 0;
+            }
+            return wHat;
+        })
+
+        // Now, merge neighboring peaks (see PyDRT documentation for more details)
+        const wHatStripped = [...wHatRefined];
+        const wHatMerged = Array(wHatRefined.length).fill(0);
+
+        while (true) {
+            // Get max' index
+            const indexMax = wHatStripped.indexOf(Math.max(...wHatStripped));
+
+            // Get window around this maximum to finid peaks to consider
+            let indexLower = indexMax;
+            let indexUpper = indexMax;
+            while (indexLower > 0 && wHatStripped[indexLower - 1] > 0) {
+                indexLower--;
+            }
+            while (indexUpper < (wHatStripped.length - 1) && wHatStripped[indexUpper + 1] > 0) {
+                indexUpper++;
+            }
+
+            // Add a peak with the sum of the window at the new weight vector
+            const windowWeightSum = wHatStripped.slice(indexLower, indexUpper + 1).reduce((a, b) => a + b, 0);
+            wHatMerged[indexMax] = windowWeightSum;
+
+            // Remove merged data from the working vector
+            for (let i = indexLower; i <= indexUpper; i++) {
+                wHatStripped[i] = 0;
+            }
+
+            // Break the cycle
+            if (wHatStripped[indexMax] === 0 && Math.max(...wHatStripped) === 0) {
+                break;
+            }
+        }
+
+        return wHatMerged;
     }
 
     _interp(x, xp, fp) {

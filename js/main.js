@@ -68,8 +68,8 @@ function plotDRTdata(data) {
 
     // Setup EIS plot
     Plotly.newPlot('drtplot', [{
-        x: data.tau_s, //data.map(d => d.tau_s),
-        y: data.gamma_hat_Ohm, //data.map(d => d.gamma_hat_Ohm),
+        x: data.tau, //data.map(d => d.tau_s),
+        y: data.gammaHat, //data.map(d => d.gamma_hat_Ohm),
         mode: 'lines',
         line: {
             color: colors.accent,
@@ -133,7 +133,9 @@ Dropzone.options.eisupload = {
                     im: result.data.map(d => d.zimag)
                 };
 
-                const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm);
+                const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm, option = {
+                    alpha: 0.98
+                });
                 console.log(drt)
 
                 // const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm, {
@@ -146,7 +148,7 @@ Dropzone.options.eisupload = {
                 // Show everything 
                 // console.log(result);
                 plotEISdata(result.data);
-                // plotDRTdata(drt);
+                plotDRTdata(drt);
                 updateMetadataDispaly(result.metadata, file)
             };
 
