@@ -215,14 +215,17 @@ class DRT {
         // Store raw weight vector (before basis transformation)
         this._weight_hat_Ohm = result.x;
 
-        // Debug: count non-zero coefficients
-        const nonZero = result.x.filter(v => v > 1e-10);
-        console.log('NNLS result:', {
-            totalCoeffs: result.x.length,
-            nonZeroCount: nonZero.length,
-            nonZeroValues: nonZero,
-            residualNorm: result.residualNorm
-        });
+        // // Debug: count non-zero coefficients
+        // const nonZero = result.x.filter(v => v > 1e-10);
+        // console.log('NNLS result:', {
+        //     totalCoeffs: result.x.length,
+        //     nonZeroCount: nonZero.length,
+        //     nonZeroValues: nonZero,
+        //     residualNorm: result.residualNorm
+        // });
+
+        // Refine weight vector (remove artifacts at boundaries)
+        this._refine_weight_vector(tau_lower, tau_upper);
         
         // Apply basis to get gamma_hat
         // weight_vector = B * weight_hat
@@ -233,9 +236,6 @@ class DRT {
                 this._weight_vector[i] += B_arr[i][j] * this._weight_hat_Ohm[j];
             }
         }
-
-        // Refine weight vector (remove artifacts at boundaries)
-        this._refine_weight_vector(tau_lower, tau_upper);
 
         // Compute back-calculated impedance
         this._compute_z_back();
@@ -322,35 +322,130 @@ class DRT {
      * Refine weight vector - remove boundary artifacts
      * @private
      */
+    // _refine_weight_vector(tau_lower, tau_upper) {
+    //     // 1. Boundary trimming
+    //     if (tau_lower !== null) {
+    //         for (let i = 0; i < this._tau_s.length; i++) {
+    //             if (this._tau_s[i] < tau_lower) {
+    //                 this._weight_vector[i] = 0;
+    //             }
+    //         }
+    //     }
+    //     if (tau_upper !== null) {
+    //         for (let i = 0; i < this._tau_s.length; i++) {
+    //             if (this._tau_s[i] > tau_upper) {
+    //                 this._weight_vector[i] = 0;
+    //             }
+    //         }
+    //     }
+
+    //     // 2. Noise removal - set small values (<0.1% of max) to zero
+    //     const maxWeight = Math.max(...this._weight_vector);
+    //     const noiseThreshold = 0.001 * maxWeight;
+    //     for (let i = 0; i < this._weight_vector.length; i++) {
+    //         if (this._weight_vector[i] < noiseThreshold) {
+    //             this._weight_vector[i] = 0;
+    //         }
+    //     }
+
+    //     // 3. Peak merging - consolidate neighboring nonzero values
+    //     // Only for non-identity basis (Cole-Cole, Gauss, etc.)
+    //     this._merge_peaks();
+    // }
     _refine_weight_vector(tau_lower, tau_upper) {
+        const w = this._weight_hat_Ohm;
+        const n = w.length;
+        
         // 1. Boundary trimming
         if (tau_lower !== null) {
-            for (let i = 0; i < this._tau_s.length; i++) {
-                if (this._tau_s[i] < tau_lower) {
-                    this._weight_vector[i] = 0;
-                }
+            for (let i = 0; i < n; i++) {
+                if (this._tau_s[i] < tau_lower) w[i] = 0;
             }
         }
         if (tau_upper !== null) {
-            for (let i = 0; i < this._tau_s.length; i++) {
-                if (this._tau_s[i] > tau_upper) {
-                    this._weight_vector[i] = 0;
+            for (let i = 0; i < n; i++) {
+                if (this._tau_s[i] > tau_upper) w[i] = 0;
+            }
+        }
+        
+        // 2. Noise removal - set small values (<0.1% of max) to zero
+        const maxWeight = Math.max(...w);
+        const noiseThreshold = 0.001 * maxWeight;
+        for (let i = 0; i < n; i++) {
+            if (w[i] < noiseThreshold) w[i] = 0;
+        }
+        
+        // 3. Peak merging (only for non-identity basis)
+        // Skip for Debye DRT (identity basis)
+        if (!this._is_identity_basis()) {
+            this._merge_peaks_in_weight_hat();
+        }
+    }
+
+
+    /**
+     * Check if basis is identity (Debye DRT)
+     * @private
+     */
+    _is_identity_basis() {
+        // Override in subclasses - base class returns false
+        return false;
+    }
+
+    /**
+     * Merge neighboring peaks in weight_hat
+     * @private
+     */
+    _merge_peaks_in_weight_hat() {
+        const w = this._weight_hat_Ohm;
+        const n = w.length;
+        
+        // Work on a copy for iteration
+        const w_stripped = [...w];
+        const w_merged = new Array(n).fill(0);
+        
+        while (true) {
+            // Find maximum
+            let indexMax = 0;
+            let maxVal = w_stripped[0];
+            for (let i = 1; i < n; i++) {
+                if (w_stripped[i] > maxVal) {
+                    maxVal = w_stripped[i];
+                    indexMax = i;
                 }
             }
-        }
-
-        // 2. Noise removal - set small values (<0.1% of max) to zero
-        const maxWeight = Math.max(...this._weight_vector);
-        const noiseThreshold = 0.001 * maxWeight;
-        for (let i = 0; i < this._weight_vector.length; i++) {
-            if (this._weight_vector[i] < noiseThreshold) {
-                this._weight_vector[i] = 0;
+            
+            // If max is 0, we're done
+            if (maxVal === 0) break;
+            
+            // Find window of non-zero elements around maximum
+            let indexLower = indexMax;
+            let indexUpper = indexMax;
+            
+            while (indexLower > 0 && w_stripped[indexLower - 1] > 0) {
+                indexLower--;
+            }
+            while (indexUpper < n - 1 && w_stripped[indexUpper + 1] > 0) {
+                indexUpper++;
+            }
+            
+            // Sum all weights in window and place at maximum position
+            let sum = 0;
+            for (let i = indexLower; i <= indexUpper; i++) {
+                sum += w_stripped[i];
+            }
+            w_merged[indexMax] = sum;
+            
+            // Remove merged region from working vector
+            for (let i = indexLower; i <= indexUpper; i++) {
+                w_stripped[i] = 0;
             }
         }
-
-        // 3. Peak merging - consolidate neighboring nonzero values
-        // Only for non-identity basis (Cole-Cole, Gauss, etc.)
-        this._merge_peaks();
+        
+        // Replace weight_hat with merged version
+        for (let i = 0; i < n; i++) {
+            this._weight_hat_Ohm[i] = w_merged[i];
+        }
     }
 
     /**
