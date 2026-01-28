@@ -137,6 +137,7 @@ Dropzone.options.eisupload = {
                     alpha: 0.88,
                     tau_min_s: 1e-5,
                     tau_max_s: 1e5,
+                    // epsilon: 0.01,
                 })
 
                 // Show everything 

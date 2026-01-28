@@ -214,6 +214,15 @@ class DRT {
         
         // Store raw weight vector (before basis transformation)
         this._weight_hat_Ohm = result.x;
+
+        // Debug: count non-zero coefficients
+        const nonZero = result.x.filter(v => v > 1e-10);
+        console.log('NNLS result:', {
+            totalCoeffs: result.x.length,
+            nonZeroCount: nonZero.length,
+            nonZeroValues: nonZero,
+            residualNorm: result.residualNorm
+        });
         
         // Apply basis to get gamma_hat
         // weight_vector = B * weight_hat
@@ -242,11 +251,37 @@ class DRT {
      * @private
      * @returns {Matrix} Kernel matrix (2*nFreq x nTau)
      */
+    // _get_rc_kernel_matrix() {
+    //     const nFreq = this._frequency_Hz.length;
+    //     const nTau = this._tau_s.length;
+        
+    //     // Stack [K_real; K_imag]
+    //     const K = Matrix.zeros(2 * nFreq, nTau);
+        
+    //     for (let i = 0; i < nFreq; i++) {
+    //         const omega = 2 * Math.PI * this._frequency_Hz[i];
+            
+    //         for (let j = 0; j < nTau; j++) {
+    //             const tau = this._tau_s[j];
+    //             const denom = 1 + Math.pow(omega * tau, 2);
+                
+    //             // Real part: 1 / (1 + (omega*tau)^2)
+    //             K.set(i, j, 1 / denom);
+                
+    //             // Imaginary part: -omega*tau / (1 + (omega*tau)^2)
+    //             K.set(i + nFreq, j, -omega * tau / denom);
+    //         }
+    //     }
+        
+    //     return K;
+    // }
     _get_rc_kernel_matrix() {
         const nFreq = this._frequency_Hz.length;
         const nTau = this._tau_s.length;
         
-        // Stack [K_real; K_imag]
+        // Compute d(ln tau) spacing (assuming uniform in log space)
+        const dLnTau = this._ln_tau_tau0[1] - this._ln_tau_tau0[0];
+        
         const K = Matrix.zeros(2 * nFreq, nTau);
         
         for (let i = 0; i < nFreq; i++) {
@@ -256,11 +291,9 @@ class DRT {
                 const tau = this._tau_s[j];
                 const denom = 1 + Math.pow(omega * tau, 2);
                 
-                // Real part: 1 / (1 + (omega*tau)^2)
-                K.set(i, j, 1 / denom);
-                
-                // Imaginary part: -omega*tau / (1 + (omega*tau)^2)
-                K.set(i + nFreq, j, -omega * tau / denom);
+                // Include integration weight d(ln tau)
+                K.set(i, j, dLnTau / denom);
+                K.set(i + nFreq, j, -omega * tau * dLnTau / denom);
             }
         }
         
@@ -379,9 +412,34 @@ class DRT {
      * Compute back-calculated impedance from DRT
      * @private
      */
+    // _compute_z_back() {
+    //     const nFreq = this._frequency_Hz.length;
+    //     const nTau = this._tau_s.length;
+        
+    //     this._z_back_Ohm = { re: [], im: [] };
+        
+    //     for (let i = 0; i < nFreq; i++) {
+    //         const omega = 2 * Math.PI * this._frequency_Hz[i];
+    //         let zRe = this._R_offset_Ohm;
+    //         let zIm = 0;
+            
+    //         for (let j = 0; j < nTau; j++) {
+    //             const tau = this._tau_s[j];
+    //             const R = this._weight_vector[j];
+    //             const denom = 1 + Math.pow(omega * tau, 2);
+                
+    //             zRe += R / denom;
+    //             zIm += -omega * tau * R / denom;
+    //         }
+            
+    //         this._z_back_Ohm.re.push(zRe);
+    //         this._z_back_Ohm.im.push(zIm);
+    //     }
+    // }
     _compute_z_back() {
         const nFreq = this._frequency_Hz.length;
         const nTau = this._tau_s.length;
+        const dLnTau = this._ln_tau_tau0[1] - this._ln_tau_tau0[0];
         
         this._z_back_Ohm = { re: [], im: [] };
         
@@ -392,11 +450,12 @@ class DRT {
             
             for (let j = 0; j < nTau; j++) {
                 const tau = this._tau_s[j];
-                const R = this._weight_vector[j];
+                const gamma = this._weight_vector[j];  // This is γ(τ), not R
                 const denom = 1 + Math.pow(omega * tau, 2);
                 
-                zRe += R / denom;
-                zIm += -omega * tau * R / denom;
+                // Integrate: γ(τ) * kernel * d(ln τ)
+                zRe += gamma * dLnTau / denom;
+                zIm += gamma * dLnTau * (-omega * tau) / denom;
             }
             
             this._z_back_Ohm.re.push(zRe);
