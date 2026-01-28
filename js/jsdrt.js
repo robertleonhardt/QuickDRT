@@ -108,6 +108,41 @@ class DRT {
         // Get basic RC matrix and basis matrix
         this.rcKernelMatrix = this._getRCKernelMatrix();
         this.basisMatrix = this._getBasisMatrix();
+
+        // Get final kernel
+        const rcKernelMatrixRe = new Matrix(this.rcKernelMatrix.re);
+        const rcKernelMatrixIm = new Matrix(this.rcKernelMatrix.im);
+        const finalKernelMatrix = {
+            re: rcKernelMatrixRe.mmul(this.basisMatrix),
+            im: rcKernelMatrixIm.mmul(this.basisMatrix)
+        }
+
+        let stackedKernelMatrix = [];
+        let stackedImpedanceVector = [];
+
+        // Stack data according to the specified data type
+        if (solvingData === 'real') {
+            stackedKernelMatrix = finalKernelMatrix.re;
+            stackedImpedanceVector = this.impedanceData.re;
+        } else if (solvingData === 'imag') {
+            stackedKernelMatrix = finalKernelMatrix.im;
+            stackedImpedanceVector = this.impedanceData.im;
+        } else { // 'both', default
+            stackedKernelMatrix = this._vstack(finalKernelMatrix.re, finalKernelMatrix.im);
+            stackedImpedanceVector = [...this.impedanceData.re, ...this.impedanceData.im];
+        }
+
+        // Apply regularization, if asked
+        if (this.epsilon) {
+            const regularizationMatrix = this._getRegularizationMatrix().mulS(this.epsilon)
+            stackedKernelMatrix = this._vstack(stackedKernelMatrix, regularizationMatrix);
+            stackedImpedanceVector = [...stackedImpedanceVector, ...Array(this.tau.length).fill(0)];
+        }
+
+        // Solve like a NNLS
+        const result = nnls(stackedKernelMatrix, stackedImpedanceVector);
+
+        this.wHat = result.x;
     }
 
     _getRCKernelMatrix() {
@@ -145,6 +180,11 @@ class DRT {
         throw new Error('_get_basis_matrix() must be implemented by subclass');
     }
 
+    _getRegularizationMatrix() {
+        // This should be an identiy matrix
+        return Matrix.eye(this.tau.length);
+    }
+
     _interp(x, xp, fp) {
         // For edge cases
         if (x <= xp[0]) {
@@ -165,16 +205,28 @@ class DRT {
         return fp[i] + t * (fp[i + 1] - fp[i]);
     }
 
+    _vstack(A, B) {
+        return new Matrix([...A.to2DArray(), ...B.to2DArray()]);
+    }
+
 }
 
 class ColeColeDRT extends DRT {
 
     constructor(frequencyData, impedanceData, options = {}) {
+        // Check if solving is anticipated
+        const solveOnStart = options.solve ?? true;
+
         // Go, call your parents
-        super(frequencyData, impedanceData, options);
+        super(frequencyData, impedanceData, { ...options, solve: false });
 
         // Store config
         this.alpha = options.alpha ?? 0.92;
+
+        // Solve, if asked
+        if (solveOnStart) {
+            this.solve();
+        }
     }
 
     _getBasisMatrix() {
@@ -194,7 +246,7 @@ class ColeColeDRT extends DRT {
                 const denom = Math.cosh(this.alpha * lnTauDiff) + cosPiAlpha;
                 const basis = (1 / (2 * Math.PI)) * sinPiAlpha / denom;
 
-                B.set(i, j, this.alpha);
+                B.set(i, j, basis);
             }
         }
 
