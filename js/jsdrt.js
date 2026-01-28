@@ -153,10 +153,10 @@ class DRT {
         const wHat = this._refineWeightVector(wHatRaw, tauMin, tauMax);
 
         // We can now calculate the DRT (i.e., gamma hat)
-        const gammaHat = this.basisMatrix.mmul(Matrix.columnVector(wHat)).getColumn(0);
+        this.gammaHat = this.basisMatrix.mmul(Matrix.columnVector(wHat)).getColumn(0);
+        this.RPol = this._trapz(this.gammaHat, this.lnTauOverTau0); 
 
-        this.wHat = wHat;
-        this.gammaHat = gammaHat;
+        // this.wHat = wHat;
     }
 
     _getRCKernelMatrix() {
@@ -270,6 +270,14 @@ class DRT {
 
     _vstack(A, B) {
         return new Matrix([...A.to2DArray(), ...B.to2DArray()]);
+    }
+
+    _trapz(y, x) {
+        let sum = 0;
+        for (let i = 0; i < y.length; i++) {
+            sum += (x[i + 1] - x[i]) * (y[i + 1] + y[i]) / 2;
+        }
+        return sum;
     }
 
 }
