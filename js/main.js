@@ -133,17 +133,20 @@ Dropzone.options.eisupload = {
                     im: result.data.map(d => d.zimag)
                 };
 
-                const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm, {
-                    alpha: 0.88,
-                    tau_min_s: 1e-5,
-                    tau_max_s: 1e5,
-                    // epsilon: 0.01,
-                })
+                const drt = new DRT(frequency_Hz, impedance_Ohm);
+                console.log(drt)
+
+                // const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm, {
+                //     alpha: 0.88,
+                //     tau_min_s: 1e-5,
+                //     tau_max_s: 1e5,
+                //     // epsilon: 0.01,
+                // })
 
                 // Show everything 
-                console.log(result);
+                // console.log(result);
                 plotEISdata(result.data);
-                plotDRTdata(drt);
+                // plotDRTdata(drt);
                 updateMetadataDispaly(result.metadata, file)
             };
 
