@@ -1,7 +1,7 @@
 /*
 Plotting EIS data with plotly.js
 */
-function getColors() {
+function getLayoutColors() {
     const style = getComputedStyle(document.body);
     return {
         text: style.getPropertyValue('--pico-color').trim(),
@@ -13,9 +13,42 @@ function getColors() {
     }
 }
 
-function plotEISdata(impedanceData, impedanceBack) {
+function getPlotColors(index) {
+    const style = getComputedStyle(document.body);
+    const colors = [
+        style.getPropertyValue('--pico-color-indigo-650').trim(),
+        style.getPropertyValue('--pico-color-amber-200').trim(),
+        style.getPropertyValue('--pico-color-fuchsia-600').trim(),
+        style.getPropertyValue('--pico-color-lime-200').trim(),
+        style.getPropertyValue('--pico-color-pink-450').trim()
+    ];
+    return colors[index % colors.length];
+}
+
+function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
     // Get colors of the website so the plot is nicer implemented
-    const colors = getColors();
+    const colors = getLayoutColors();
+    
+    // Setup list with peaks
+    const processImpedanceDataList = [];
+    let processImpedanceIndex = 0;
+
+    for (const processImpedance of impedanceProcessList) {
+        processImpedanceDataList.push({
+            x: processImpedance.re,
+            y: processImpedance.im.map(x => -x),
+            mode: 'lines',
+            fill: 'tozeroy',
+            fillcolor: getPlotColors(processImpedanceIndex) + '80',
+            line: {
+                width: 1,
+                color: getPlotColors(processImpedanceIndex)  + '40'
+            },
+            name: `Process p${processImpedanceIndex + 1}`
+        });
+
+        processImpedanceIndex++;
+    }
 
     // Setup EIS plot
     Plotly.newPlot('eisplot', [{
@@ -33,7 +66,8 @@ function plotEISdata(impedanceData, impedanceBack) {
                 color: colors.accent,
                 width: 1.5,
             }
-        }
+        },
+        name: 'Data'
     }, {
         x: impedanceBack.re,
         y: impedanceBack.im.map(x => -x),
@@ -45,8 +79,9 @@ function plotEISdata(impedanceData, impedanceBack) {
         marker: {
             color: colors.fit,
             size: 5
-        }
-    }], {
+        },
+        name: 'DRT fit'
+    }, ...impedanceProcessList], {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: colors.text },
@@ -75,20 +110,43 @@ function plotEISdata(impedanceData, impedanceBack) {
     })
 }
 
-function plotDRTdata(data) {
+function plotDRTdata(drt, drtPeakList) {
     // Get colors of the website so the plot is nicer implemented
-    const colors = getColors();
+    const colors = getLayoutColors();
+
+    // Setup list with peaks
+    const peakDataList = [];
+    let peakIndex = 0;
+
+    for (const peak of drtPeakList) {
+        peakDataList.push({
+            x: drt.tau,
+            y: peak.gammaHat,
+            mode: 'lines',
+            fill: 'tozeroy',
+            fillcolor: getPlotColors(peakIndex) + '80',
+            line: {
+                width: 1,
+                color: getPlotColors(peakIndex)  + '40'
+            },
+            name: `Process p${peakIndex + 1}`
+        });
+
+        peakIndex++;
+    }
+    
 
     // Setup EIS plot
     Plotly.newPlot('drtplot', [{
-        x: data.tau, //data.map(d => d.tau_s),
-        y: data.gammaHat, //data.map(d => d.gamma_hat_Ohm),
+        x: drt.tau,
+        y: drt.gammaHat, 
         mode: 'lines',
         line: {
             color: colors.accent,
             width: 1.5,
         },
-    }], {
+        name: 'Full DRT'
+    }, ...peakDataList], {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: colors.text },
@@ -137,13 +195,13 @@ Dropzone.options.eisupload = {
             const reader = new FileReader();
             reader.onload = function(e) {
                 // Load EIS data
-                const result = parseFile(e.target.result, file.name);
+                const eisData = parseFile(e.target.result, file.name);
 
                 // Setup DRT
-                const frequencyData = result.data.map(d => d.freq);
+                const frequencyData = eisData.data.map(d => d.freq);
                 const impedanceData = {
-                    re: result.data.map(d => d.zreal),
-                    im: result.data.map(d => d.zimag)
+                    re: eisData.data.map(d => d.zreal),
+                    im: eisData.data.map(d => d.zimag)
                 };
 
                 const drt = new ColeColeDRT(frequencyData, impedanceData, option = {
@@ -151,13 +209,23 @@ Dropzone.options.eisupload = {
                     tauMin: 1e-5,
                     // tauMax: 1e0
                 });
-                console.log(drt)
+
+                const drtPeakList = drt.getSeparatedPeakList();
+
+                const impedanceProcessList = [];
+                let i = 0;
+                for (const peak of drtPeakList) {
+                    impedanceProcessList.push(drt.getSingleProcessImpedance(peak.tau, peak.R, peak.ROffset));
+                    i++;
+                }
 
                 // Show everything 
-                // console.log(result);
-                plotEISdata(impedanceData, drt.impedanceCalculated);
-                plotDRTdata(drt);
-                updateMetadataDispaly(result.metadata, file)
+                // console.log(eisData);
+                // console.log(drt)
+                // console.log(drtPeakList);
+                plotEISdata(impedanceData, drt.impedanceCalculated, impedanceProcessList);
+                plotDRTdata(drt, drtPeakList);
+                updateMetadataDispaly(eisData.metadata, file)
             };
 
             reader.readAsText(file)

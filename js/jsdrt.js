@@ -266,6 +266,79 @@ class DRT {
         return wHatMerged;
     }
 
+    getSeparatedPeakList(options = {}) {
+        // Get options
+        const maxPeakNumber = options.maxPeakNumber ?? null;
+        const tauPeakMin = options.tauPeakMin ?? this.tauMin;
+        const tauPeakMax = options.tauPeakMax ?? this.tauMax;
+        const sortByTau = options.sortByTau ?? true;
+
+        // Get some data 
+        const w = this.w;
+        const B = this.basisMatrix;
+
+        const peakList = [];
+
+        // This will assign the "exact" Ohmic offset for each process individually for easier use
+        let ROffset = this.ROhm;
+
+        // Get non-zero indices (i.e., processes)
+        const peakIndices = w.map((w, i) => w > 0 ? i : -1).filter(i => i >= 0);
+
+        for (const peakIndex of peakIndices) {
+            const tauPeak = this.tau[peakIndex];
+
+            // Filter for valid taus
+            if (tauPeak <= tauPeakMin || tauPeak >= tauPeakMax) {
+                continue;
+            }
+
+            // Create a sparse weight vector
+            const wSparse = Array(w.length).fill(0);
+            wSparse[peakIndex] = w[peakIndex];
+
+            // Calculate DRT for this very peak
+            const gammaHatPeak = B.mmul(Matrix.columnVector(wSparse)).getColumn(0).map(g => g * this.RPol);
+
+            // Calculate R and C
+            const RPeak = this._trapz(gammaHatPeak, this.lnTauOverTau0);
+            const CPeak = this._getCapacitance(tauPeak, RPeak);
+
+            // Filter for tieniest resistances (we don't want them)
+            if (RPeak < 1e-5) {
+                continue;
+            }
+
+            peakList.push({
+                tau: tauPeak,
+                R: RPeak,
+                C: CPeak,
+                w: w[peakIndex],
+                gammaHat: gammaHatPeak,
+                ROffset: ROffset
+            });
+
+            ROffset += RPeak;
+        }
+
+        // Sort by R and keep top n peaks
+        if (maxPeakNumber) {
+            peakList.sort((x, y) => y.R - x.R); // Descending order
+            peakList.length = Math.min(peakList.length, maxPeakNumber);
+        }
+
+        // Sort by tau (if requested)
+        if (sortByTau) {
+            peakList.sort((x, y) => x.tau - y.tau); // Ascending order
+        }
+
+        return peakList;
+    }
+
+    _getCapacitance(tau, R) {
+        return tau / R;
+    }
+
     // Some missing helper methods
     _interp(x, xp, fp) {
         // For edge cases
@@ -341,6 +414,32 @@ class ColeColeDRT extends DRT {
         }
 
         return B;
+    }
+
+    _getCapacitance(tau, R) {
+        return Math.pow(tau, this.alpha) / R;
+    }
+
+    getSingleProcessImpedance(tau, RPeak, ROffset) {
+        const re = [];
+        const im = [];
+
+        // Precalc trig stuff
+        const sinAlpha = Math.sin(Math.PI * this.alpha / 2);
+        const cosAlpha = Math.cos(Math.PI * this.alpha / 2);
+
+        // Compute impedance for all frequencies
+        for (const f of this.frequencyData) {
+            const omegaTauAlpha = Math.pow(2 * Math.PI * f * tau, this.alpha);
+            const denomRe = 1 + omegaTauAlpha * cosAlpha;
+            const denomIm = omegaTauAlpha * sinAlpha;
+            const denomMagSquare = denomRe * denomRe + denomIm * denomIm;
+
+            re.push(ROffset + RPeak * denomRe / denomMagSquare);
+            im.push(-RPeak * denomIm / denomMagSquare);
+        }
+
+        return { re, im };
     }
 
 }
