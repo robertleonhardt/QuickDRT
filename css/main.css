@@ -40,7 +40,7 @@ div.eisplot {
     background-color: var(--pico-card-background-color);
     border: 1px solid var(--pico-muted-border-color);
     border-radius: var(--pico-border-radius);
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 dl.metadata {
@@ -55,5 +55,9 @@ dl.metadata dt {
 
 dl.metadata dd {
     margin: 0;
-    color: var(--pico-primary)
+    color: var(--pico-primary);
+}
+
+span.param {
+    color: var(--pico-primary);
 }

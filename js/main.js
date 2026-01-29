@@ -34,15 +34,16 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
     let processImpedanceIndex = 0;
 
     for (const processImpedance of impedanceProcessList) {
+        const processColor = colors.fit; // getPlotColors(peakIndex)
         processImpedanceDataList.push({
             x: processImpedance.re,
             y: processImpedance.im.map(x => -x),
             mode: 'lines',
             fill: 'tozeroy',
-            fillcolor: getPlotColors(processImpedanceIndex) + '80',
+            fillcolor: processColor + '40',
             line: {
                 width: 1,
-                color: getPlotColors(processImpedanceIndex)  + '40'
+                color: processColor
             },
             name: `Process p${processImpedanceIndex + 1}`
         });
@@ -81,12 +82,12 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
             size: 5
         },
         name: 'DRT fit'
-    }, ...impedanceProcessList], {
+    }, ...processImpedanceDataList], {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: colors.text },
         xaxis: { 
-            title: "Z' / Ohm",
+            title: "$Z' / \\Omega$", 
             gridcolor: colors.grid,
             zerolinecolor: colors.grid,
             showline: true,
@@ -96,7 +97,7 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
             mirror: 'allticks',
         },
         yaxis: { 
-            title: "-Z'' / Ohm", 
+            title: "y", 
             scaleanchor: 'x', 
             scaleratio: 1,
             gridcolor: colors.grid,
@@ -107,7 +108,7 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
             ticks: 'inside',
             mirror: 'allticks',
         },
-    })
+    }, { mathjax: 'cdn' })
 }
 
 function plotDRTdata(drt, drtPeakList) {
@@ -119,15 +120,16 @@ function plotDRTdata(drt, drtPeakList) {
     let peakIndex = 0;
 
     for (const peak of drtPeakList) {
+        const processColor = colors.fit; // getPlotColors(peakIndex)
         peakDataList.push({
             x: drt.tau,
             y: peak.gammaHat,
             mode: 'lines',
             fill: 'tozeroy',
-            fillcolor: getPlotColors(peakIndex) + '80',
+            fillcolor: processColor + '40',
             line: {
                 width: 1,
-                color: getPlotColors(peakIndex)  + '40'
+                color: processColor
             },
             name: `Process p${peakIndex + 1}`
         });
@@ -143,7 +145,7 @@ function plotDRTdata(drt, drtPeakList) {
         mode: 'lines',
         line: {
             color: colors.accent,
-            width: 1.5,
+            width: 2,
         },
         name: 'Full DRT'
     }, ...peakDataList], {
@@ -171,13 +173,15 @@ function plotDRTdata(drt, drtPeakList) {
             ticks: 'inside',
             mirror: 'allticks',
         },
-    })
+    }, { mathjax: 'cdn' })
 }
 
 
 /*
 Dropzone configuration for easy drag-and-drop EIS data upload
 */
+let eisData = null;
+
 Dropzone.options.eisupload = {
     // Config
     paramName: 'file',
@@ -195,37 +199,20 @@ Dropzone.options.eisupload = {
             const reader = new FileReader();
             reader.onload = function(e) {
                 // Load EIS data
-                const eisData = parseFile(e.target.result, file.name);
+                const eisDataParsed = parseFile(e.target.result, file.name);
 
                 // Setup DRT
-                const frequencyData = eisData.data.map(d => d.freq);
+                const frequencyData = eisDataParsed.data.map(d => d.freq);
                 const impedanceData = {
-                    re: eisData.data.map(d => d.zreal),
-                    im: eisData.data.map(d => d.zimag)
+                    re: eisDataParsed.data.map(d => d.zreal),
+                    im: eisDataParsed.data.map(d => d.zimag)
                 };
 
-                const drt = new ColeColeDRT(frequencyData, impedanceData, option = {
-                    alpha: 0.93,
-                    tauMin: 1e-5,
-                    // tauMax: 1e0
-                });
+                // Store data (so it is available outside)
+                eisData = { frequencyData, impedanceData, metadata: eisDataParsed.metadata, file: file };
 
-                const drtPeakList = drt.getSeparatedPeakList();
-
-                const impedanceProcessList = [];
-                let i = 0;
-                for (const peak of drtPeakList) {
-                    impedanceProcessList.push(drt.getSingleProcessImpedance(peak.tau, peak.R, peak.ROffset));
-                    i++;
-                }
-
-                // Show everything 
-                // console.log(eisData);
-                // console.log(drt)
-                // console.log(drtPeakList);
-                plotEISdata(impedanceData, drt.impedanceCalculated, impedanceProcessList);
-                plotDRTdata(drt, drtPeakList);
-                updateMetadataDispaly(eisData.metadata, file)
+                // Run DRT once file is loaded
+                drtAnalysis();
             };
 
             reader.readAsText(file)
@@ -249,8 +236,114 @@ Dropzone.options.eisupload = {
     }
 };
 
+/**
+ * Handle configurations
+ */
+const configAlphaInputSlider = document.getElementById('config-alpha');
+const configAlphaOutput = document.getElementById('configval-alpha');
+
+const configTauMinInputSlider = document.getElementById('config-tauMin');
+const configTauMinOutput = document.getElementById('configval-tauMin');
+
+const configTauMaxInputSlider = document.getElementById('config-tauMax');
+const configTauMaxOutput = document.getElementById('configval-tauMax');
+
+const tauWarningElement = document.getElementById('tau-warning');
+
+const configPpdInputSlider = document.getElementById('config-ppd');
+const configPpdOutput = document.getElementById('configval-ppd');
+
+// Set defaults
+configAlphaInputSlider.value = 0.92;
+configAlphaOutput.textContent = 0.92;
+
+configTauMinInputSlider.value = -6;
+configTauMinOutput.textContent = formatExp(-6);
+
+configTauMaxInputSlider.value = 6;
+configTauMaxOutput.textContent = formatExp(6);
+
+configPpdInputSlider.value = 30;
+configPpdOutput.textContent = 30;
+
+configAlphaInputSlider.addEventListener('input', (e) => {
+    const alpha = parseFloat(e.target.value);
+    configAlphaOutput.textContent = alpha;
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+configTauMinInputSlider.addEventListener('input', (e) => {
+    const tauMin = parseFloat(e.target.value);
+    configTauMinOutput.textContent = formatExp(tauMin);
+
+    validateTauRange();
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+configTauMaxInputSlider.addEventListener('input', (e) => {
+    const tauMax = parseFloat(e.target.value);
+    configTauMaxOutput.textContent = formatExp(tauMax);
+
+    validateTauRange();
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+configPpdInputSlider.addEventListener('input', (e) => {
+    const ppd = parseFloat(e.target.value);
+    configPpdOutput.textContent = ppd;
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+function validateTauRange() {
+    const tauMinExp = parseFloat(configTauMinInputSlider.value);
+    const tauMaxExp = parseFloat(configTauMaxInputSlider.value);
+    const isValid = (tauMaxExp - tauMinExp) >= 1;
+
+    tauWarningElement.hidden = isValid;
+}
+
+function drtAnalysis() {
+    // Avoid running this without data being parsed
+    if (!eisData) {
+        return; 
+    }
+
+    const drt = new ColeColeDRT(eisData.frequencyData, eisData.impedanceData, option = {
+        alpha: parseFloat(configAlphaInputSlider.value),
+        tauMin: Math.pow(10, parseFloat(configTauMinInputSlider.value)),
+        tauMax: Math.pow(10, parseFloat(configTauMaxInputSlider.value)),
+        tauRangePointsPerDecade: parseFloat(configPpdInputSlider.value)
+    });
+
+    const drtPeakList = drt.getSeparatedPeakList();
+
+    const impedanceProcessList = [];
+    let i = 0;
+    for (const peak of drtPeakList) {
+        impedanceProcessList.push(drt.getSingleProcessImpedance(peak.tau, peak.R, peak.ROffset));
+        i++;
+    }
+
+    plotEISdata(eisData.impedanceData, drt.impedanceCalculated, impedanceProcessList);
+    plotDRTdata(drt, drtPeakList);
+    updateMetadataDispaly(eisData.metadata, eisData.file);
+}
+
 function updateMetadataDispaly(metadata, file) {
     document.getElementById('metadata-filename').textContent = file.name;
     document.getElementById('metadata-label').textContent = metadata.label;
     document.getElementById('metadata-date').textContent = metadata.date;
+}
+
+function formatExp(exp) {
+    const value = Math.pow(10, exp);
+    return value.toExponential(0).replace('+', '');
 }
