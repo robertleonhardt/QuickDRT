@@ -6,7 +6,8 @@ function getLayoutColors() {
     return {
         text: style.getPropertyValue('--pico-color').trim(),
         grid: style.getPropertyValue('--pico-muted-border-color').trim(),
-        frame: style.getPropertyValue('--pico-contrast-border').trim(),
+        // frame: style.getPropertyValue('--pico-contrast-border').trim(),
+        frame: style.getPropertyValue('--pico-color').trim(),
         accent: style.getPropertyValue('--pico-primary').trim(),
         background: style.getPropertyValue('--pico-background-color').trim(),
         fit: style.getPropertyValue('--pico-color-amber-200').trim()
@@ -15,13 +16,18 @@ function getLayoutColors() {
 
 function getPlotColors(index) {
     const style = getComputedStyle(document.body);
-    const colors = [
+    const picoColors = [
         style.getPropertyValue('--pico-color-indigo-650').trim(),
         style.getPropertyValue('--pico-color-amber-200').trim(),
         style.getPropertyValue('--pico-color-fuchsia-600').trim(),
         style.getPropertyValue('--pico-color-lime-200').trim(),
         style.getPropertyValue('--pico-color-pink-450').trim()
     ];
+    const viridisColors = [
+        '#440154', '#482878', '#3e4a89', '#31688e', '#26838f',
+        '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725'
+    ];
+    const colors = viridisColors;
     return colors[index % colors.length];
 }
 
@@ -34,10 +40,10 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
     let processImpedanceIndex = 0;
 
     for (const processImpedance of impedanceProcessList) {
-        const processColor = colors.fit; // getPlotColors(peakIndex)
+        const processColor = getPlotColors(processImpedanceIndex); // colors.fit
         processImpedanceDataList.push({
-            x: processImpedance.re,
-            y: processImpedance.im.map(x => -x),
+            x: processImpedance.re.map(x => 1000 * x),
+            y: processImpedance.im.map(x => -1000 * x),
             mode: 'lines',
             fill: 'tozeroy',
             fillcolor: processColor + '40',
@@ -53,8 +59,8 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
 
     // Setup EIS plot
     Plotly.newPlot('eisplot', [{
-        x: impedanceData.re,
-        y: impedanceData.im.map(x => -x),
+        x: impedanceData.re.map(x => 1000 * x),
+        y: impedanceData.im.map(x => -1000 * x),
         mode: 'lines+markers',
         line: {
             color: colors.accent,
@@ -70,8 +76,8 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
         },
         name: 'Data'
     }, {
-        x: impedanceBack.re,
-        y: impedanceBack.im.map(x => -x),
+        x: impedanceBack.re.map(x => 1000 * x),
+        y: impedanceBack.im.map(x => -1000 * x),
         mode: 'lines+markers',
         line: {
             color: colors.fit,
@@ -87,17 +93,19 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: colors.text },
         xaxis: { 
-            title: "$Z' / \\Omega$", 
+            title: { text: "Z' / mΩ" },
             gridcolor: colors.grid,
             zerolinecolor: colors.grid,
             showline: true,
             linecolor: colors.frame,
             linewidth: 1,
             ticks: 'inside',
+            tickcolor: colors.frame,
+            minor: { ticks: 'inside', tickcolor: colors.frame },
             mirror: 'allticks',
         },
         yaxis: { 
-            title: "y", 
+            title: { text: "-Z'' / mΩ" },
             scaleanchor: 'x', 
             scaleratio: 1,
             gridcolor: colors.grid,
@@ -106,9 +114,11 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
             linecolor: colors.frame,
             linewidth: 1,
             ticks: 'inside',
+            tickcolor: colors.frame,
+            minor: { ticks: 'inside', tickcolor: colors.frame },
             mirror: 'allticks',
         },
-    }, { mathjax: 'cdn' })
+    }, { responsive: true })
 }
 
 function plotDRTdata(drt, drtPeakList) {
@@ -120,10 +130,10 @@ function plotDRTdata(drt, drtPeakList) {
     let peakIndex = 0;
 
     for (const peak of drtPeakList) {
-        const processColor = colors.fit; // getPlotColors(peakIndex)
+        const processColor = getPlotColors(peakIndex); // colors.fit
         peakDataList.push({
             x: drt.tau,
-            y: peak.gammaHat,
+            y: peak.gammaHat.map(x => 1000 * x),
             mode: 'lines',
             fill: 'tozeroy',
             fillcolor: processColor + '40',
@@ -141,7 +151,7 @@ function plotDRTdata(drt, drtPeakList) {
     // Setup EIS plot
     Plotly.newPlot('drtplot', [{
         x: drt.tau,
-        y: drt.gammaHat, 
+        y: drt.gammaHat.map(x => 1000 * x), 
         mode: 'lines',
         line: {
             color: colors.accent,
@@ -153,27 +163,33 @@ function plotDRTdata(drt, drtPeakList) {
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: colors.text },
         xaxis: { 
+            title: { text: "τ / s" },
             type: 'log',
-            title: "Z' / Ohm",
+            dtick: 1,
+            exponentformat: 'power',
             gridcolor: colors.grid,
             zerolinecolor: colors.grid,
             showline: true,
             linecolor: colors.frame,
             linewidth: 1,
             ticks: 'inside',
+            tickcolor: colors.frame,
+            minor: { ticks: 'inside', tickcolor: colors.frame },
             mirror: 'allticks',
         },
         yaxis: { 
-            title: "-Z'' / Ohm", 
+            title: { text: "R<sub>pol</sub>γ(ln(τ/τ<sub>0</sub>)) / mΩ" }, 
             gridcolor: colors.grid,
             zerolinecolor: colors.frame,
             showline: true,
             linecolor: colors.frame,
             linewidth: 1,
             ticks: 'inside',
+            tickcolor: colors.frame,
+            minor: { ticks: 'inside', tickcolor: colors.frame },
             mirror: 'allticks',
         },
-    }, { mathjax: 'cdn' })
+    }, { responsive: true })
 }
 
 
