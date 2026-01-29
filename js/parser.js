@@ -16,6 +16,7 @@ function getDefaultMetadata() {
 }
 
 function parseFile(text, filename) {
+    // Parse data
     const defaultMetadata = getDefaultMetadata()
     let parsed; 
     if (filename.endsWith('.dta')) {
@@ -24,9 +25,28 @@ function parseFile(text, filename) {
         parsed = parseStandardizedCSV(text);
     }
 
+    // Get index near R0 (for trimming)
+    function findIndexOfFirstNegativeIm(freq, zimag) {
+        // Create sorted pairs
+        const paired = freq.map((f, i) => ({ freq: f, zimag: zimag[i] }));
+        paired.sort((a, b) => b.freq - a.freq); // High f to low f
+
+        for (let i = 0; i < paired.length; i++) {
+            if (paired[i].zimag < 0) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
     return {
         metadata: { ...defaultMetadata, ...parsed.metadata },
-        data: parsed.data
+        data: parsed.data,
+        transitionIndex: findIndexOfFirstNegativeIm(
+            parsed.data.map(d => d.freq), 
+            parsed.data.map(d => d.zimag)
+        )
     };
 }
 

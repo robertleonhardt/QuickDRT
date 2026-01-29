@@ -57,8 +57,17 @@
                     <hr />
                     
                     <details name="config">
-                        <summary>DRT options</summary>
+                        <summary>Options</summary>
                         <article>
+                            <fieldset>
+                                <label>
+                                    <input name="treimInductivePart" id="config-trimInductivePart" type="checkbox" role="switch" checked/>
+                                    Trim inductive impedance data
+                                </label>
+                            </fieldset>
+
+                            <hr />
+
                             <!-- <fieldset>
                                 <legend>Basis function type</legend>
                                 <input type="radio" id="basis-db" name="config-basisType" disabled/>
@@ -71,7 +80,7 @@
                                 <label htmlFor="basis-ga">Gaussian</label>
                             </fieldset> -->
                             <label>
-                                Shape parameter (α): <span class="param" id="configval-alpha">N/A</span>
+                                DRT shape parameter (α): <span class="param" id="configval-alpha">N/A</span>
                                 <input type="range" id="config-alpha" min="0.5" max="0.99", step="0.01" value="0.92"/>
                             </label>
 

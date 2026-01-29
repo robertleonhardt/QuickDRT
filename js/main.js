@@ -31,6 +31,54 @@ function getPlotColors(index) {
     return colors[index % colors.length];
 }
 
+function getViridisPlotColors(n, alpha = 1) {
+    // Some viridis colors
+    const viridis = [
+        [0.0, 68, 1, 84],
+        [0.1, 72, 40, 120],
+        [0.2, 62, 74, 137],
+        [0.3, 49, 104, 142],
+        [0.4, 38, 130, 142],
+        [0.5, 31, 158, 137],
+        [0.6, 53, 183, 121],
+        [0.7, 110, 206, 88],
+        [0.8, 181, 222, 43],
+        [1.0, 253, 231, 37]
+    ];
+
+    function interpolate(t) {
+        // Find surrounding control points
+        let i = 0;
+        while (i < viridis.length - 1 && viridis[i + 1][0] < t) {
+            i++;
+        }
+        if (i >= viridis.length -1) {
+            i = viridis.length - 2;
+        }
+
+        const [t0, r0, g0, b0] = viridis[i];
+        const [t1, r1, g1, b1] = viridis[i+1];
+
+        // Linear interpolation
+        const f = (t - t0) / (t1 - t0);
+        const r = Math.round(r0 + f * (r1 - r0));
+        const g = Math.round(g0 + f * (g1 - g0));
+        const b = Math.round(b0 + f * (b1 - b0));
+
+        // return `rgba(${r},${g},${b},${alpha})`; // rgb
+
+        const toHex = (x) => x.toString(16).padStart(2, '0');
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+
+    const colors = [];
+    for (let i = 0; i < n; i++) {
+        const t = n === 1 ? 0.5 : i / (n - 1);
+        colors.push(interpolate(t));
+    }
+    return colors;
+}
+
 function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
     // Get colors of the website so the plot is nicer implemented
     const colors = getLayoutColors();
@@ -39,8 +87,10 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
     const processImpedanceDataList = [];
     let processImpedanceIndex = 0;
 
+    const colorMap = getViridisPlotColors(impedanceProcessList.length, 0.3);
+
     for (const processImpedance of impedanceProcessList) {
-        const processColor = getPlotColors(processImpedanceIndex); // colors.fit
+        const processColor = colorMap[processImpedanceIndex]; // colors.fit
         processImpedanceDataList.push({
             x: processImpedance.re.map(x => 1000 * x),
             y: processImpedance.im.map(x => -1000 * x),
@@ -58,7 +108,7 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
     }
 
     // Setup EIS plot
-    Plotly.newPlot('eisplot', [{
+    Plotly.newPlot('eisplot', [...processImpedanceDataList, {
         x: impedanceData.re.map(x => 1000 * x),
         y: impedanceData.im.map(x => -1000 * x),
         mode: 'lines+markers',
@@ -88,7 +138,7 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
             size: 5
         },
         name: 'DRT fit'
-    }, ...processImpedanceDataList], {
+    }], {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: colors.text },
@@ -118,7 +168,13 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
             minor: { ticks: 'inside', tickcolor: colors.frame },
             mirror: 'allticks',
         },
-    }, { responsive: true })
+    }, { 
+        responsive: true,
+        toImageButtonOptions: {
+            format: 'svg',
+            filename: 'eisdata'
+        }
+    })
 }
 
 function plotDRTdata(drt, drtPeakList) {
@@ -129,8 +185,10 @@ function plotDRTdata(drt, drtPeakList) {
     const peakDataList = [];
     let peakIndex = 0;
 
+    const colorMap = getViridisPlotColors(drtPeakList.length, 1);
+
     for (const peak of drtPeakList) {
-        const processColor = getPlotColors(peakIndex); // colors.fit
+        const processColor = colorMap[peakIndex]; // colors.fit
         peakDataList.push({
             x: drt.tau,
             y: peak.gammaHat.map(x => 1000 * x),
@@ -149,16 +207,16 @@ function plotDRTdata(drt, drtPeakList) {
     
 
     // Setup EIS plot
-    Plotly.newPlot('drtplot', [{
+    Plotly.newPlot('drtplot', [...peakDataList, {
         x: drt.tau,
         y: drt.gammaHat.map(x => 1000 * x), 
         mode: 'lines',
         line: {
-            color: colors.accent,
+            color: colors.accent + '60',
             width: 2,
         },
         name: 'Full DRT'
-    }, ...peakDataList], {
+    }], {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: colors.text },
@@ -189,8 +247,21 @@ function plotDRTdata(drt, drtPeakList) {
             minor: { ticks: 'inside', tickcolor: colors.frame },
             mirror: 'allticks',
         },
-    }, { responsive: true })
+    }, { 
+        responsive: true,
+        toImageButtonOptions: {
+            format: 'svg',
+            filename: 'eisdata'
+        }
+    })
 }
+
+// Fix potential issues with changed device color theme (dark mode -> light mode)
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (eisData) {
+        drtAnalysis();
+    }
+});
 
 
 /*
@@ -279,8 +350,8 @@ configTauMinOutput.textContent = formatExp(-6);
 configTauMaxInputSlider.value = 6;
 configTauMaxOutput.textContent = formatExp(6);
 
-configPpdInputSlider.value = 30;
-configPpdOutput.textContent = 30;
+configPpdInputSlider.value = 70;
+configPpdOutput.textContent = 70;
 
 configAlphaInputSlider.addEventListener('input', (e) => {
     const alpha = parseFloat(e.target.value);
@@ -351,6 +422,7 @@ function drtAnalysis() {
     plotEISdata(eisData.impedanceData, drt.impedanceCalculated, impedanceProcessList);
     plotDRTdata(drt, drtPeakList);
     updateMetadataDispaly(eisData.metadata, eisData.file);
+    console.log(eisData);
 }
 
 function updateMetadataDispaly(metadata, file) {
