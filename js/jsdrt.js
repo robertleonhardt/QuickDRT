@@ -50,13 +50,13 @@ class DRT {
         // slice().reverse() returns a copied, flipped version of the data
         // This is nessecary as the author still is not capable of interpreting in ascending data
         // The copying (slice()) ensure that we won't permanently re-sort the data
-        this.ohmicResistance = this._interp(0, this.inputImpedanceData.im.slice().reverse(), this.inputImpedanceData.re.slice().reverse());
+        this.ROhm = this._interp(0, this.inputImpedanceData.im.slice().reverse(), this.inputImpedanceData.re.slice().reverse());
         
         // Subtract the Ohmic resistance and finally store the data
         // After this point, only this.impedanceData should be altered
         this.frequencyData = this.inputFrequencyData;
         this.impedanceData = { 
-            re: this.inputImpedanceData.re.map(z => z - this.ohmicResistance),
+            re: this.inputImpedanceData.re.map(z => z - this.ROhm),
             im: this.inputImpedanceData.im
         }
 
@@ -69,6 +69,7 @@ class DRT {
         }
 
         // TD: Include diffusion offset algorithm from PyDRT
+        // (Not sure this will happen, tho)
 
         // Setup time constant range
         this.setupTimeConstants();
@@ -139,7 +140,7 @@ class DRT {
 
         // Apply regularization, if asked
         if (epsilon) {
-            const regularizationMatrix = this._getRegularizationMatrix().mulS(this.epsilon)
+            const regularizationMatrix = this._getRegularizationMatrix().mulS(this.epsilon);
             stackedKernelMatrix = this._vstack(stackedKernelMatrix, regularizationMatrix);
             stackedImpedanceVector = [...stackedImpedanceVector, ...Array(this.tau.length).fill(0)];
         }
@@ -156,7 +157,24 @@ class DRT {
         this.gammaHat = this.basisMatrix.mmul(Matrix.columnVector(wHat)).getColumn(0);
         this.RPol = this._trapz(this.gammaHat, this.lnTauOverTau0); 
 
-        // this.wHat = wHat;
+        // Catch unwanted exceptions
+        if (this.RPol === 0) {
+            this.RPol = 1e-9;
+        }
+
+        // We can now calculate gamma (without hat)
+        // This is essentially the weight function whose integral will be (close to) 1, 
+        // whereas gamma hat also include RPol; gammaHat = RPol * gamma
+        // (The same is true for the weight then)
+        this.gamma = this.gammaHat.map(g => g / this.RPol);
+        this.w = wHat.map(w => w / this.RPol);
+
+        // Finally, one can re-calculate the impedance from the DRT
+        const wHatVector = Matrix.columnVector(wHat);
+        this.impedanceCalculated = {
+            re: finalKernelMatrix.re.mmul(wHatVector).getColumn(0).map(r => r + this.ROhm),
+            im: finalKernelMatrix.im.mmul(wHatVector).getColumn(0)
+        }
     }
 
     _getRCKernelMatrix() {
@@ -248,6 +266,7 @@ class DRT {
         return wHatMerged;
     }
 
+    // Some missing helper methods
     _interp(x, xp, fp) {
         // For edge cases
         if (x <= xp[0]) {
@@ -274,7 +293,7 @@ class DRT {
 
     _trapz(y, x) {
         let sum = 0;
-        for (let i = 0; i < y.length; i++) {
+        for (let i = 0; i < y.length - 1; i++) {
             sum += (x[i + 1] - x[i]) * (y[i + 1] + y[i]) / 2;
         }
         return sum;

@@ -9,17 +9,18 @@ function getColors() {
         frame: style.getPropertyValue('--pico-contrast-border').trim(),
         accent: style.getPropertyValue('--pico-primary').trim(),
         background: style.getPropertyValue('--pico-background-color').trim(),
+        fit: style.getPropertyValue('--pico-color-amber-200').trim()
     }
 }
 
-function plotEISdata(data) {
+function plotEISdata(impedanceData, impedanceBack) {
     // Get colors of the website so the plot is nicer implemented
     const colors = getColors();
 
     // Setup EIS plot
     Plotly.newPlot('eisplot', [{
-        x: data.map(d => d.zreal),
-        y: data.map(d => -d.zimag),
+        x: impedanceData.re,
+        y: impedanceData.im.map(x => -x),
         mode: 'lines+markers',
         line: {
             color: colors.accent,
@@ -32,6 +33,18 @@ function plotEISdata(data) {
                 color: colors.accent,
                 width: 1.5,
             }
+        }
+    }, {
+        x: impedanceBack.re,
+        y: impedanceBack.im.map(x => -x),
+        mode: 'lines+markers',
+        line: {
+            color: colors.fit,
+            width: 1.5,
+        },
+        marker: {
+            color: colors.fit,
+            size: 5
         }
     }], {
         paper_bgcolor: 'rgba(0,0,0,0)',
@@ -127,27 +140,22 @@ Dropzone.options.eisupload = {
                 const result = parseFile(e.target.result, file.name);
 
                 // Setup DRT
-                const frequency_Hz = result.data.map(d => d.freq);
-                const impedance_Ohm = {
+                const frequencyData = result.data.map(d => d.freq);
+                const impedanceData = {
                     re: result.data.map(d => d.zreal),
                     im: result.data.map(d => d.zimag)
                 };
 
-                const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm, option = {
-                    alpha: 0.98
+                const drt = new ColeColeDRT(frequencyData, impedanceData, option = {
+                    alpha: 0.93,
+                    tauMin: 1e-5,
+                    // tauMax: 1e0
                 });
                 console.log(drt)
 
-                // const drt = new ColeColeDRT(frequency_Hz, impedance_Ohm, {
-                //     alpha: 0.88,
-                //     tau_min_s: 1e-5,
-                //     tau_max_s: 1e5,
-                //     // epsilon: 0.01,
-                // })
-
                 // Show everything 
                 // console.log(result);
-                plotEISdata(result.data);
+                plotEISdata(impedanceData, drt.impedanceCalculated);
                 plotDRTdata(drt);
                 updateMetadataDispaly(result.metadata, file)
             };
