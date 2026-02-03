@@ -699,8 +699,8 @@ function exportEISData() {
             frequency[i],
             drt._origInputImpedanceData.re[i],
             drt._origInputImpedanceData.im[i],
-            frequencyUsedForDRT ? drt.impedanceCalculated.re[i - skippedDRTImpedancePoints] : '-12',
-            frequencyUsedForDRT ? drt.impedanceCalculated.im[i - skippedDRTImpedancePoints] : '-12',
+            frequencyUsedForDRT ? drt.impedanceCalculated.re[i - skippedDRTImpedancePoints] : '',
+            frequencyUsedForDRT ? drt.impedanceCalculated.im[i - skippedDRTImpedancePoints] : '',
         ];
 
         for (const processImpedance of impedanceProcessList) {
