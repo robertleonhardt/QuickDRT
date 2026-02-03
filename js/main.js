@@ -684,16 +684,23 @@ function exportEISData() {
     const numberOfPoints = frequency.length;
 
     // Populate data stuff
+    let skippedDRTImpedancePoints = 0;
     for (let i = 0; i < numberOfPoints; i++) {
         // Handle the case of trimmed frequencies in which some high frequencies might be missing
         const frequencyUsedForDRT = drt.frequencyData.includes(frequency[i]);
-        if (i > 50) console.log(drt.impedanceCalculated.re[i]);
+        // if (i > 50) console.log(drt.impedanceCalculated.re[i]);
+
+        // If high frequency part is trimmed, we have to offset the index accordingly
+        if (!frequencyUsedForDRT) {
+            skippedDRTImpedancePoints++;
+        }
+
         const row = [
             frequency[i],
             drt._origInputImpedanceData.re[i],
             drt._origInputImpedanceData.im[i],
-            frequencyUsedForDRT ? drt.impedanceCalculated.re[i] : '-12',
-            frequencyUsedForDRT ? drt.impedanceCalculated.im[i] : '-12',
+            frequencyUsedForDRT ? drt.impedanceCalculated.re[i - skippedDRTImpedancePoints] : '-12',
+            frequencyUsedForDRT ? drt.impedanceCalculated.im[i - skippedDRTImpedancePoints] : '-12',
         ];
 
         for (const processImpedance of impedanceProcessList) {
@@ -704,8 +711,9 @@ function exportEISData() {
         rows.push(row.join(','));
     }
 
-    console.log(drt.frequencyData);
-    console.log(drt.impedanceCalculated.re);
+    // Debug residues
+    // console.log(drt.frequencyData);
+    // console.log(drt.impedanceCalculated.re);
 
     // Combine everything into CSV
     const csv = [
