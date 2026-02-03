@@ -356,8 +356,8 @@ configTauMinOutput.textContent = formatExp(-6);
 configTauMaxInputSlider.value = 6;
 configTauMaxOutput.textContent = formatExp(6);
 
-configPpdInputSlider.value = 70;
-configPpdOutput.textContent = 70;
+configPpdInputSlider.value = 40;
+configPpdOutput.textContent = 40;
 
 configTrimInductivePartToogle.addEventListener('input', (e) => {
     // Run DRT once value is changed
@@ -507,6 +507,14 @@ function resetHighlight(plotDiv, numberOfProcesses, colorMap) {
     }, Array.from({length: numberOfProcesses}, (_, i) => i));
 }
 
+document.addEventListener('mousemove', (e) => {
+    const tooltip = document.getElementById('drt-process-tooltip');
+    if (tooltip && tooltip.style.display === 'block') {
+        tooltip.style.left = (e.clientX + 10) + 'px';
+        tooltip.style.top = (e.clientY + 10) + 'px';
+    }
+})
+
 function setupLinkedHoverEvents(drtPeakList, alpha) {
     const eisPlotDiv = document.getElementById('eisplot');
     const drtPlotDiv = document.getElementById('drtplot');
@@ -517,29 +525,25 @@ function setupLinkedHoverEvents(drtPeakList, alpha) {
     const colorMap = getViridisPlotColors(numberOfProcesses);
 
     // Helper to show tooltip
-    function showTooltip(eventData, traceIndex) {
+    function showTooltip(traceIndex) {
         const peak = drtPeakList[traceIndex];
 
         // Format values
         const tauFormatted = peak.tau.toExponential(2);
-        const rFormatted = (1000 * peak.R).toFixed(3);
-        const cFormatted = peak.C.toExponential(2);
+        const rFormatted = (1000 * peak.R).toPrecision(4);
+        const cFormatted = peak.C.toPrecision(4);
 
         tooltip.innerHTML = `
             <strong style="color: ${colorMap[traceIndex]}$">Process p${traceIndex + 1}</strong>
             <table style="margin: 4px 0 0 0; border-collapse: collapse">
-                <tr><td>τ</td><td style="padding-left: 10px">${tauFormatted} s</td></tr>
-                <tr><td>R</td><td style="padding-left: 10px">${rFormatted} mΩ</td></tr>
-                <tr><td>C</td><td style="padding-left: 10px">${cFormatted} F</td></tr>
+                <tr><td>τ<sub>p,${traceIndex + 1}</sub></td><td style="padding-left: 10px">${tauFormatted} s</td></tr>
+                <tr><td>R<sub>p,${traceIndex + 1}</sub></td><td style="padding-left: 10px">${rFormatted} mΩ</td></tr>
+                <tr><td>C<sub>eq,p,${traceIndex + 1}</sub></td><td style="padding-left: 10px">${cFormatted} F</td></tr>
                 <tr><td>α</td><td style="padding-left: 10px">${alpha}</td></tr>
             </table>
         `;
 
-        // Position the tooltip near the cursor
-        const xOffset = 15;
-        const yOffset = 15;
-        tooltip.style.left = (eventData.event.clientX + xOffset) + 'px';
-        tooltip.style.top = (eventData.event.clientY + yOffset) + 'px';
+        // Show tooltip
         tooltip.style.display = 'block';
     }
 
@@ -565,7 +569,7 @@ function setupLinkedHoverEvents(drtPeakList, alpha) {
         if (traceIndex < numberOfProcesses) {
             highlightProcess(eisPlotDiv, traceIndex, numberOfProcesses, colorMap);
             highlightProcess(drtPlotDiv, traceIndex, numberOfProcesses, colorMap);
-            showTooltip(eventData, traceIndex);
+            showTooltip(traceIndex);
         }
     });
 
@@ -585,7 +589,7 @@ function setupLinkedHoverEvents(drtPeakList, alpha) {
         if (traceIndex < numberOfProcesses) {
             highlightProcess(eisPlotDiv, traceIndex, numberOfProcesses, colorMap);
             highlightProcess(drtPlotDiv, traceIndex, numberOfProcesses, colorMap);
-            showTooltip(eventData, traceIndex);
+            showTooltip(traceIndex);
         }
     });
 
