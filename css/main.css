@@ -70,3 +70,16 @@ dl.metadata dd {
 span.param {
     color: var(--pico-primary);
 }
+
+div.drt-process-tooltip {
+    display: none;
+    position: fixed;
+    background-color: var(--pico-background-color);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}

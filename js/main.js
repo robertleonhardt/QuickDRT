@@ -97,6 +97,7 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
             mode: 'lines',
             fill: 'tozeroy',
             fillcolor: processColor + '40',
+            hoveron: 'points+fills',
             line: {
                 width: 1,
                 color: processColor
@@ -195,6 +196,7 @@ function plotDRTdata(drt, drtPeakList) {
             mode: 'lines',
             fill: 'tozeroy',
             fillcolor: processColor + '40',
+            hoveron: 'points+fills',
             line: {
                 width: 1,
                 color: processColor
@@ -454,7 +456,7 @@ function drtAnalysis() {
     console.log(eisData);
 
     // Add hover details
-    setupLinkedHoverEvents(drtPeakList.length);
+    setupLinkedHoverEvents(drtPeakList, drt.alpha);
 }
 
 function highlightProcess(plotDiv, activeTraceIndex, numberOfProcesses, colorMap) {
@@ -462,23 +464,32 @@ function highlightProcess(plotDiv, activeTraceIndex, numberOfProcesses, colorMap
     const opacities = [];
     const lineWidths = [];
     const fillColors = [];
+    const fillPatterns = [];
 
     for (let i = 0; i < numberOfProcesses; i++) {
         if (i === activeTraceIndex) {
             opacities.push(1);
             lineWidths.push(3);
             fillColors.push(colorMap[i] + '80');
+            fillPatterns.push({
+                shape: '/',
+                size: 8,
+                solidity: '0.3',
+                fgcolor: colorMap[i] + '80'
+            });
         } else {
             opacities.push(0.05);
             lineWidths.push(0.5);
             fillColors.push(colorMap[i] + '10');
+            fillPatterns.push({ shape: '' });
         }
     }
 
     Plotly.restyle(plotDiv, {
         'opacity': opacities,
         'line.width': lineWidths,
-        'fillcolor': fillColors
+        'fillcolor': fillColors,
+        'fillpattern': fillPatterns
     }, Array.from({length: numberOfProcesses}, (_, i) => i));
 }
 
@@ -486,19 +497,56 @@ function resetHighlight(plotDiv, numberOfProcesses, colorMap) {
     const opacities = Array(numberOfProcesses).fill(1);
     const lineWidths = Array(numberOfProcesses).fill(1);
     const fillColors = colorMap.map(c => c + '40');
+    const fillPatterns = Array(numberOfProcesses).fill({ shape: '' });
 
     Plotly.restyle(plotDiv, {
         'opacity': opacities,
         'line.width': lineWidths,
-        'fillcolor': fillColors
+        'fillcolor': fillColors,
+        'fillpattern': fillPatterns
     }, Array.from({length: numberOfProcesses}, (_, i) => i));
 }
 
-function setupLinkedHoverEvents(numberOfProcesses) {
+function setupLinkedHoverEvents(drtPeakList, alpha) {
     const eisPlotDiv = document.getElementById('eisplot');
     const drtPlotDiv = document.getElementById('drtplot');
+    const tooltip = document.getElementById('drt-process-tooltip');
+
+    const numberOfProcesses = drtPeakList.length;
 
     const colorMap = getViridisPlotColors(numberOfProcesses);
+
+    // Helper to show tooltip
+    function showTooltip(eventData, traceIndex) {
+        const peak = drtPeakList[traceIndex];
+
+        // Format values
+        const tauFormatted = peak.tau.toExponential(2);
+        const rFormatted = (1000 * peak.R).toFixed(3);
+        const cFormatted = peak.C.toExponential(2);
+
+        tooltip.innerHTML = `
+            <strong style="color: ${colorMap[traceIndex]}$">Process p${traceIndex + 1}</strong>
+            <table style="margin: 4px 0 0 0; border-collapse: collapse">
+                <tr><td>τ</td><td style="padding-left: 10px">${tauFormatted} s</td></tr>
+                <tr><td>R</td><td style="padding-left: 10px">${rFormatted} mΩ</td></tr>
+                <tr><td>C</td><td style="padding-left: 10px">${cFormatted} F</td></tr>
+                <tr><td>α</td><td style="padding-left: 10px">${alpha}</td></tr>
+            </table>
+        `;
+
+        // Position the tooltip near the cursor
+        const xOffset = 15;
+        const yOffset = 15;
+        tooltip.style.left = (eventData.event.clientX + xOffset) + 'px';
+        tooltip.style.top = (eventData.event.clientY + yOffset) + 'px';
+        tooltip.style.display = 'block';
+    }
+
+    // Helper to hide tooltip
+    function hideTooltip() {
+        tooltip.style.display = 'none';
+    }
 
     // Remove old listeners
     eisPlotDiv.removeAllListeners('plotly_hover');
@@ -508,33 +556,43 @@ function setupLinkedHoverEvents(numberOfProcesses) {
 
     // Attach new listeners
     eisPlotDiv.on('plotly_hover', function(eventData) {
+        if (!eventData.points || eventData.points.length === 0){
+            return;
+        }
         const traceIndex = eventData.points[0].curveNumber;
 
         // Only react to process traces 
         if (traceIndex < numberOfProcesses) {
             highlightProcess(eisPlotDiv, traceIndex, numberOfProcesses, colorMap);
             highlightProcess(drtPlotDiv, traceIndex, numberOfProcesses, colorMap);
+            showTooltip(eventData, traceIndex);
         }
     });
 
     eisPlotDiv.on('plotly_unhover', function(eventData) {
         resetHighlight(eisPlotDiv, numberOfProcesses, colorMap);
         resetHighlight(drtPlotDiv, numberOfProcesses, colorMap);
+        hideTooltip();
     });
 
     drtPlotDiv.on('plotly_hover', function(eventData) {
+        if (!eventData.points || eventData.points.length === 0){
+            return;
+        }
         const traceIndex = eventData.points[0].curveNumber;
 
         // Only react to process traces 
         if (traceIndex < numberOfProcesses) {
             highlightProcess(eisPlotDiv, traceIndex, numberOfProcesses, colorMap);
             highlightProcess(drtPlotDiv, traceIndex, numberOfProcesses, colorMap);
+            showTooltip(eventData, traceIndex);
         }
     });
 
     drtPlotDiv.on('plotly_unhover', function(eventData) {
         resetHighlight(eisPlotDiv, numberOfProcesses, colorMap);
         resetHighlight(drtPlotDiv, numberOfProcesses, colorMap);
+        hideTooltip();
     });
 }
 
