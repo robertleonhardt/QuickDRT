@@ -467,7 +467,7 @@ function drtAnalysis() {
     plotEISdata(eisDataImpedance, drt.impedanceCalculated, impedanceProcessList);
     plotDRTdata(drt, drtPeakList);
     updateMetadataDispaly(eisData.metadata, eisData.file);
-    console.log(eisData);
+    // console.log(eisData);
 
     // Add hover details
     setupLinkedHoverEvents(drtPeakList, drt.alpha);
@@ -680,23 +680,20 @@ function exportEISData() {
 
     // Build data rows
     const rows = [];
-    const frequency = drt._origInputFrequencyData;
+    const frequency = drt._origInputFrequencyData; // This should always be the longest
     const numberOfPoints = frequency.length;
-
-    // Get DRT frequencies (the ones that were really used AFTER the trimming)
-    const drtFrequency = drt.frequencyData;
 
     // Populate data stuff
     for (let i = 0; i < numberOfPoints; i++) {
         // Handle the case of trimmed frequencies in which some high frequencies might be missing
-        const frequencyUsedForDRT = drtFrequency.includes(frequency[i]);
-
+        const frequencyUsedForDRT = drt.frequencyData.includes(frequency[i]);
+        if (i > 50) console.log(drt.impedanceCalculated.re[i]);
         const row = [
             frequency[i],
             drt._origInputImpedanceData.re[i],
             drt._origInputImpedanceData.im[i],
-            frequencyUsedForDRT ? drt.impedanceCalculated.re[i] : '',
-            frequencyUsedForDRT ? drt.impedanceCalculated.im[i] : '',
+            frequencyUsedForDRT ? drt.impedanceCalculated.re[i] : '-12',
+            frequencyUsedForDRT ? drt.impedanceCalculated.im[i] : '-12',
         ];
 
         for (const processImpedance of impedanceProcessList) {
@@ -706,6 +703,9 @@ function exportEISData() {
         // Add data to da list
         rows.push(row.join(','));
     }
+
+    console.log(drt.frequencyData);
+    console.log(drt.impedanceCalculated.re);
 
     // Combine everything into CSV
     const csv = [

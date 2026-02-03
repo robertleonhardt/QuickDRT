@@ -429,7 +429,7 @@ class ColeColeDRT extends DRT {
         const cosAlpha = Math.cos(Math.PI * this.alpha / 2);
 
         // Compute impedance for all frequencies
-        const simulationFrequencyList = this.tau.map(x => 2 * Math.PI / x); //this._origInputFrequencyData
+        const simulationFrequencyList = this._origInputFrequencyData; // this.tau.map(x => 2 * Math.PI / x);
         for (const f of simulationFrequencyList) { 
             const omegaTauAlpha = Math.pow(2 * Math.PI * f * tau, this.alpha);
             const denomRe = 1 + omegaTauAlpha * cosAlpha;
