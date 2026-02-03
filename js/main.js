@@ -408,6 +408,11 @@ function validateTauRange() {
     tauWarningElement.hidden = isValid;
 }
 
+/**
+ * Handle the DRT computations and stuff
+ */
+let lastDRTResult = null;
+
 function drtAnalysis() {
     // Avoid running this without data being parsed
     if (!eisData) {
@@ -449,6 +454,14 @@ function drtAnalysis() {
         };
     }
 
+    // Store DRT results
+    lastDRTResult = {
+        drt: drt,
+        drtPeakList: drtPeakList,
+        impedanceProcessList: impedanceProcessList,
+        eisDataImpedance: eisDataImpedance
+    }
+
     // Plot and output data
     plotEISdata(eisDataImpedance, drt.impedanceCalculated, impedanceProcessList);
     plotDRTdata(drt, drtPeakList);
@@ -457,6 +470,10 @@ function drtAnalysis() {
 
     // Add hover details
     setupLinkedHoverEvents(drtPeakList, drt.alpha);
+
+    // Activate export buttons
+    document.getElementById('export-eis').disabled = false;
+    document.getElementById('export-drt').disabled = false;
 }
 
 function highlightProcess(plotDiv, activeTraceIndex, numberOfProcesses, colorMap) {
@@ -610,3 +627,137 @@ function formatExp(exp) {
     const value = Math.pow(10, exp);
     return value.toExponential(0).replace('+', '');
 }
+
+/**
+ * Export functions
+ */
+function buildMetadataJSON() {
+    const processes = lastDRTResult.drtPeakList.map((peak, index) => ({
+        process: index + 1,
+        tau_s: peak.tau,
+        R_Ohm: peak.R,
+        C_eq_F: peak.C
+    }));
+
+    return {
+        label: eisData.metadata.label,
+        date: eisData.metadata.date,
+        filename: eisData.file.name,
+        alpha: lastDRTResult.drt.alpha,
+        tau_min_s: Math.pow(10, parseFloat(configTauMinInputSlider.value)),
+        tau_max_s: Math.pow(10, parseFloat(configTauMaxInputSlider.value)),
+        drt_resolution_ppd: parseFloat(configPpdInputSlider.value),
+        process_list: processes
+    }
+}
+
+function downloadCSV(filename, content) {
+    // Setup data object
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+
+    // Create a link and virtually download it
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+function exportEISData() {
+    if (!lastDRTResult || !eisData) {
+        return;
+    }
+
+    const metadata = buildMetadataJSON();
+    const { drt, drtPeakList, impedanceProcessList, eisDataImpedance } = lastDRTResult;
+    
+    // Build header row
+    const headers = ['frequency_Hz', 'z_data_real_Ohm', 'z_data_imag_Ohm', 'z_fit_real_Ohm', 'z_fit_imag_Ohm'];
+    for (let i = 0; i < drtPeakList.length; i++) {
+        headers.push(`z_p${i + 1}_real_Ohm`, `z_p${i + 1}_imag_Ohm`);
+    }
+
+    // Build data rows
+    const rows = [];
+    const frequency = drt._origInputFrequencyData;
+    const numberOfPoints = frequency.length;
+
+    // Populate data stuff
+    for (let i = 0; i < numberOfPoints; i++) {
+        const row = [
+            frequency[i],
+            drt._origInputImpedanceData.re[i],
+            drt._origInputImpedanceData.im[i],
+            drt.impedanceCalculated.re[i],
+            drt.impedanceCalculated.im[i],
+        ];
+
+        for (const processImpedance of impedanceProcessList) {
+            row.push(processImpedance.re[i], processImpedance.im[i]);
+        }
+
+        // Add data to da list
+        rows.push(row.join(','));
+    }
+
+    // Combine everything into CSV
+    const csv = [
+        '#' + JSON.stringify(metadata),
+        headers.join(','),
+        ...rows
+    ].join('\n');
+
+    // Generate filename and download the csv
+    const baseName = eisData.file.name.replace(/\.[^.]+$/, '.');
+    downloadCSV(`${baseName}_eis.csv`, csv);
+}
+
+function exportDRTData() {
+    if (!lastDRTResult || !eisData) {
+        return;
+    }
+
+    const metadata = buildMetadataJSON();
+    const { drt, drtPeakList } = lastDRTResult;
+
+    // Build header row
+    const headers = ['tau_s', 'gamma_full_Ohm'];
+    for (let i = 0; i < drtPeakList.length; i++) {
+        headers.push(`gamma_p${i + 1}_Ohm`);
+    }
+
+    // Build data rows
+    const rows = [];
+    const tau = drt.tau;
+    const numberOfPoints = tau.length;
+
+    // Populate data again
+    for (let i = 0; i < numberOfPoints; i++) {
+        const row = [
+            tau[i],
+            drt.gammaHat[i]
+        ];
+
+        for (const peak of drtPeakList) {
+            row.push(peak.gammaHat[i]);
+        }
+
+        // Add data to da list
+        rows.push(row.join(','));
+    }
+
+    // Combine everything into CSV
+    const csv = [
+        '#' + JSON.stringify(metadata),
+        headers.join(','),
+        ...rows
+    ].join('\n');
+
+    // Generate filename and download the csv
+    const baseName = eisData.file.name.replace(/\.[^.]+$/, '.');
+    downloadCSV(`${baseName}_drt.csv`, csv);
+}
+
+// Setup download buttons
+document.getElementById('export-eis').addEventListener('click', exportEISData);
+document.getElementById('export-drt').addEventListener('click', exportDRTData);

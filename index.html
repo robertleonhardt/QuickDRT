@@ -112,7 +112,7 @@
                     <details name="export">
                         <summary>Data export</summary>
                         <article>
-                            <fieldset>
+                            <!-- <fieldset>
                                 <legend>Export settings</legend>
                                 <label>
                                     <input type="checkbox" name="export-eis" checked>
@@ -122,8 +122,9 @@
                                     <input type="checkbox" name="export-drt" checked>
                                     Export DRT data (incl. processes)
                                 </label>
-                            </fieldset>
-                            <button class="primary export"><svg width="20" height="20"><use href="#icon-download"></use></svg>Export DRT and EIS data</button>
+                            </fieldset> -->
+                            <button class="primary export" id="export-eis" disabled><svg width="20" height="20"><use href="#icon-download"></use></svg>Export EIS data</button>
+                            <button class="primary export" id="export-drt" disabled><svg width="20" height="20"><use href="#icon-download"></use></svg>Export DRT data</button>
                         </article>
                     </details>
 
