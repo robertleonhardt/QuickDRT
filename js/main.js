@@ -457,40 +457,48 @@ function drtAnalysis() {
     setupLinkedHoverEvents(drtPeakList.length);
 }
 
-function highlightProcess(plotDiv, activeTraceIndex, numberOfProcesses) {
+function highlightProcess(plotDiv, activeTraceIndex, numberOfProcesses, colorMap) {
     // Dim all process traces except the active one
     const opacities = [];
     const lineWidths = [];
+    const fillColors = [];
 
     for (let i = 0; i < numberOfProcesses; i++) {
         if (i === activeTraceIndex) {
             opacities.push(1);
             lineWidths.push(3);
+            fillColors.push(colorMap[i] + '80');
         } else {
             opacities.push(0.05);
             lineWidths.push(0.5);
+            fillColors.push(colorMap[i] + '10');
         }
     }
 
     Plotly.restyle(plotDiv, {
         'opacity': opacities,
-        'line.width': lineWidths
+        'line.width': lineWidths,
+        'fillcolor': fillColors
     }, Array.from({length: numberOfProcesses}, (_, i) => i));
 }
 
-function resetHighlight(plotDiv, numberOfProcesses) {
+function resetHighlight(plotDiv, numberOfProcesses, colorMap) {
     const opacities = Array(numberOfProcesses).fill(1);
     const lineWidths = Array(numberOfProcesses).fill(1);
+    const fillColors = colorMap.map(c => c + '40');
 
     Plotly.restyle(plotDiv, {
         'opacity': opacities,
-        'line.width': lineWidths
+        'line.width': lineWidths,
+        'fillcolor': fillColors
     }, Array.from({length: numberOfProcesses}, (_, i) => i));
 }
 
 function setupLinkedHoverEvents(numberOfProcesses) {
     const eisPlotDiv = document.getElementById('eisplot');
     const drtPlotDiv = document.getElementById('drtplot');
+
+    const colorMap = getViridisPlotColors(numberOfProcesses);
 
     // Remove old listeners
     eisPlotDiv.removeAllListeners('plotly_hover');
@@ -504,12 +512,14 @@ function setupLinkedHoverEvents(numberOfProcesses) {
 
         // Only react to process traces 
         if (traceIndex < numberOfProcesses) {
-            highlightProcess(drtPlotDiv, traceIndex, numberOfProcesses);
+            highlightProcess(eisPlotDiv, traceIndex, numberOfProcesses, colorMap);
+            highlightProcess(drtPlotDiv, traceIndex, numberOfProcesses, colorMap);
         }
     });
 
     eisPlotDiv.on('plotly_unhover', function(eventData) {
-        resetHighlight(drtPlotDiv, numberOfProcesses);
+        resetHighlight(eisPlotDiv, numberOfProcesses, colorMap);
+        resetHighlight(drtPlotDiv, numberOfProcesses, colorMap);
     });
 
     drtPlotDiv.on('plotly_hover', function(eventData) {
@@ -517,12 +527,14 @@ function setupLinkedHoverEvents(numberOfProcesses) {
 
         // Only react to process traces 
         if (traceIndex < numberOfProcesses) {
-            highlightProcess(eisPlotDiv, traceIndex, numberOfProcesses);
+            highlightProcess(eisPlotDiv, traceIndex, numberOfProcesses, colorMap);
+            highlightProcess(drtPlotDiv, traceIndex, numberOfProcesses, colorMap);
         }
     });
 
     drtPlotDiv.on('plotly_unhover', function(eventData) {
-        resetHighlight(eisPlotDiv, numberOfProcesses);
+        resetHighlight(eisPlotDiv, numberOfProcesses, colorMap);
+        resetHighlight(drtPlotDiv, numberOfProcesses, colorMap);
     });
 }
 
