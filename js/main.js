@@ -447,10 +447,83 @@ function drtAnalysis() {
         };
     }
 
+    // Plot and output data
     plotEISdata(eisDataImpedance, drt.impedanceCalculated, impedanceProcessList);
     plotDRTdata(drt, drtPeakList);
     updateMetadataDispaly(eisData.metadata, eisData.file);
     console.log(eisData);
+
+    // Add hover details
+    setupLinkedHoverEvents(drtPeakList.length);
+}
+
+function highlightProcess(plotDiv, activeTraceIndex, numberOfProcesses) {
+    // Dim all process traces except the active one
+    const opacities = [];
+    const lineWidths = [];
+
+    for (let i = 0; i < numberOfProcesses; i++) {
+        if (i === activeTraceIndex) {
+            opacities.push(1);
+            lineWidths.push(3);
+        } else {
+            opacities.push(0.05);
+            lineWidths.push(0.5);
+        }
+    }
+
+    Plotly.restyle(plotDiv, {
+        'opacity': opacities,
+        'line.width': lineWidths
+    }, Array.from({length: numberOfProcesses}, (_, i) => i));
+}
+
+function resetHighlight(plotDiv, numberOfProcesses) {
+    const opacities = Array(numberOfProcesses).fill(1);
+    const lineWidths = Array(numberOfProcesses).fill(1);
+
+    Plotly.restyle(plotDiv, {
+        'opacity': opacities,
+        'line.width': lineWidths
+    }, Array.from({length: numberOfProcesses}, (_, i) => i));
+}
+
+function setupLinkedHoverEvents(numberOfProcesses) {
+    const eisPlotDiv = document.getElementById('eisplot');
+    const drtPlotDiv = document.getElementById('drtplot');
+
+    // Remove old listeners
+    eisPlotDiv.removeAllListeners('plotly_hover');
+    eisPlotDiv.removeAllListeners('plotly_unhover');
+    drtPlotDiv.removeAllListeners('plotly_hover');
+    drtPlotDiv.removeAllListeners('plotly_unhover');
+
+    // Attach new listeners
+    eisPlotDiv.on('plotly_hover', function(eventData) {
+        const traceIndex = eventData.points[0].curveNumber;
+
+        // Only react to process traces 
+        if (traceIndex < numberOfProcesses) {
+            highlightProcess(drtPlotDiv, traceIndex, numberOfProcesses);
+        }
+    });
+
+    eisPlotDiv.on('plotly_unhover', function(eventData) {
+        resetHighlight(drtPlotDiv, numberOfProcesses);
+    });
+
+    drtPlotDiv.on('plotly_hover', function(eventData) {
+        const traceIndex = eventData.points[0].curveNumber;
+
+        // Only react to process traces 
+        if (traceIndex < numberOfProcesses) {
+            highlightProcess(eisPlotDiv, traceIndex, numberOfProcesses);
+        }
+    });
+
+    drtPlotDiv.on('plotly_unhover', function(eventData) {
+        resetHighlight(eisPlotDiv, numberOfProcesses);
+    });
 }
 
 function updateMetadataDispaly(metadata, file) {
