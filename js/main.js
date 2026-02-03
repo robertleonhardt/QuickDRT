@@ -296,7 +296,7 @@ Dropzone.options.eisupload = {
                 };
 
                 // Store data (so it is available outside)
-                eisData = { frequencyData, impedanceData, metadata: eisDataParsed.metadata, file: file };
+                eisData = { frequencyData, impedanceData, metadata: eisDataParsed.metadata, transitionIndex: eisDataParsed.transitionIndex, file: file };
 
                 // Run DRT once file is loaded
                 drtAnalysis();
@@ -326,6 +326,8 @@ Dropzone.options.eisupload = {
 /**
  * Handle configurations
  */
+const configTrimInductivePartToogle = document.getElementById('config-trimInductivePart');
+
 const configAlphaInputSlider = document.getElementById('config-alpha');
 const configAlphaOutput = document.getElementById('configval-alpha');
 
@@ -341,6 +343,8 @@ const configPpdInputSlider = document.getElementById('config-ppd');
 const configPpdOutput = document.getElementById('configval-ppd');
 
 // Set defaults
+configTrimInductivePartToogle.checked = true;
+
 configAlphaInputSlider.value = 0.92;
 configAlphaOutput.textContent = 0.92;
 
@@ -352,6 +356,11 @@ configTauMaxOutput.textContent = formatExp(6);
 
 configPpdInputSlider.value = 70;
 configPpdOutput.textContent = 70;
+
+configTrimInductivePartToogle.addEventListener('input', (e) => {
+    // Run DRT once value is changed
+    drtAnalysis();
+})
 
 configAlphaInputSlider.addEventListener('input', (e) => {
     const alpha = parseFloat(e.target.value);
@@ -419,7 +428,26 @@ function drtAnalysis() {
         i++;
     }
 
-    plotEISdata(eisData.impedanceData, drt.impedanceCalculated, impedanceProcessList);
+    // Trim inductive part of EIS data, if requested
+    let eisDataImpedance = eisData.impedanceData;
+    if (configTrimInductivePartToogle.checked === true && eisData.transitionIndex > 0) {
+        // Sort data
+        const paired = eisData.frequencyData.map((f, i) => ({
+            freq: f,
+            re: eisData.impedanceData.re[i],
+            im: eisData.impedanceData.im[i],
+        }));
+        paired.sort((a, b) => b.freq - a.freq); // High to low frequency
+
+        // Trim data
+        const trimmed = paired.slice(eisData.transitionIndex - 3);
+        eisDataImpedance = {
+            re: trimmed.map(v => v.re),
+            im: trimmed.map(v => v.im)
+        };
+    }
+
+    plotEISdata(eisDataImpedance, drt.impedanceCalculated, impedanceProcessList);
     plotDRTdata(drt, drtPeakList);
     updateMetadataDispaly(eisData.metadata, eisData.file);
     console.log(eisData);
