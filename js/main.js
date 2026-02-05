@@ -1,3 +1,222 @@
+/**
+ * Interface to user interface
+ */
+
+// Define elements 
+const configButtonGeneral = document.getElementById('config-button-general');
+const configButtonBasis = document.getElementById('config-button-basis');
+const configButtonReset = document.getElementById('config-button-reset');
+const configContainerGeneral = document.getElementById('config-group-general');
+const configContainerBasis = document.getElementById('config-group-basis');
+
+const configTrimInductivePartToogle = document.getElementById('config-trimInductivePart');
+
+const configTauMinInputSlider = document.getElementById('config-tauMin');
+const configTauMinOutput = document.getElementById('configval-tauMin');
+
+const configTauMaxInputSlider = document.getElementById('config-tauMax');
+const configTauMaxOutput = document.getElementById('configval-tauMax');
+
+const tauWarningElement = document.getElementById('tau-warning');
+
+const configPpdInputSlider = document.getElementById('config-ppd');
+const configPpdOutput = document.getElementById('configval-ppd');
+
+const configBasisTypeSelect = document.getElementById('config-basis-type');
+const configBasisDBConfigOutput = document.getElementById('basis-config-db');
+const configBasisGAConfigOutput = document.getElementById('basis-config-ga');
+const configBasisCCConfigOutput = document.getElementById('basis-config-cc');
+const configBasisHNConfigOutput = document.getElementById('basis-config-hn');
+
+const configBasisGAFWHMInputSlider = document.getElementById('config-ga-fwhm');
+const configBasisGAFWHMOutput = document.getElementById('configval-ga-fwhm');
+
+const configBasisCCAlphaInputSlider = document.getElementById('config-cc-alpha');
+const configBasisCCAlphaOutput = document.getElementById('configval-cc-alpha');
+
+const configBasisHNAlphaInputSlider = document.getElementById('config-hn-alpha');
+const configBasisHNAlphaOutput = document.getElementById('configval-hn-alpha');
+const configBasisHNBetaInputSlider = document.getElementById('config-hn-beta');
+const configBasisHNBetaOutput = document.getElementById('configval-hn-beta');
+
+const configEpsilonInputSlider = document.getElementById('config-epsilon');
+const configEpsilonOutput = document.getElementById('configval-epsilon');
+
+// Set defaults
+function setDefaultParameters() {
+    configSwitchToGeneral();
+    configTrimInductivePartToogle.checked = true;
+
+    configTauMinInputSlider.value = -6;
+    configTauMinOutput.textContent = formatExp(-6);
+
+    configTauMaxInputSlider.value = 6;
+    configTauMaxOutput.textContent = formatExp(6);
+
+    configPpdInputSlider.value = 40;
+    configPpdOutput.textContent = 40;
+
+    toggleBasisConfig('basis-cc');
+
+    configBasisGAFWHMInputSlider.value = 0.4;
+    configBasisGAFWHMOutput.textContent = 0.4;
+
+    configBasisCCAlphaInputSlider.value = 0.92;
+    configBasisCCAlphaOutput.textContent = 0.92;
+
+    configBasisHNAlphaInputSlider.value = 0.92;
+    configBasisHNAlphaOutput.textContent = 0.92;
+
+    configBasisHNBetaInputSlider.value = 0.92;
+    configBasisHNBetaOutput.textContent = 0.92;
+
+    configEpsilonInputSlider.value = -6; // Will be treated as zero
+    configEpsilonOutput.textContent = 'Off'; // Will be treated as zero
+}
+
+// Helper functions
+function configSwitchToGeneral() {
+    configButtonGeneral.classList.remove('outline');
+    configButtonBasis.classList.add('outline');
+    configContainerGeneral.style.display = 'block';
+    configContainerBasis.style.display = 'none';
+}
+
+function configSwitchToBasis() {
+    configButtonGeneral.classList.add('outline');
+    configButtonBasis.classList.remove('outline');
+    configContainerGeneral.style.display = 'none';
+    configContainerBasis.style.display = 'block';
+}
+
+function validateTauRange() {
+    const tauMinExp = parseFloat(configTauMinInputSlider.value);
+    const tauMaxExp = parseFloat(configTauMaxInputSlider.value);
+    const isValid = (tauMaxExp - tauMinExp) >= 1;
+
+    tauWarningElement.hidden = isValid;
+}
+
+function toggleBasisConfig(basisType = 'basis-cc') {
+    switch (basisType) {
+        case 'basis-db':
+            configBasisDBConfigOutput.style.display = 'block';
+            configBasisGAConfigOutput.style.display = 'none';
+            configBasisCCConfigOutput.style.display = 'none';
+            configBasisHNConfigOutput.style.display = 'none';
+            break;
+        case 'basis-ga':
+            configBasisDBConfigOutput.style.display = 'none';
+            configBasisGAConfigOutput.style.display = 'block';
+            configBasisCCConfigOutput.style.display = 'none';
+            configBasisHNConfigOutput.style.display = 'none';
+            break;
+        case 'basis-hn':
+            configBasisDBConfigOutput.style.display = 'none';
+            configBasisGAConfigOutput.style.display = 'none';
+            configBasisCCConfigOutput.style.display = 'none';
+            configBasisHNConfigOutput.style.display = 'block';
+            break;
+        default: // Cole-Cole
+            configBasisDBConfigOutput.style.display = 'none';
+            configBasisGAConfigOutput.style.display = 'none';
+            configBasisCCConfigOutput.style.display = 'block';
+            configBasisHNConfigOutput.style.display = 'none';
+    }
+}
+
+// Config event handler
+configButtonGeneral.addEventListener('click', configSwitchToGeneral);
+configButtonBasis.addEventListener('click', configSwitchToBasis);
+configButtonReset.addEventListener('click', setDefaultParameters);
+
+configTrimInductivePartToogle.addEventListener('input', drtAnalysis);
+
+configTauMinInputSlider.addEventListener('input', (e) => {
+    const tauMin = parseFloat(e.target.value);
+    configTauMinOutput.textContent = formatExp(tauMin);
+
+    validateTauRange();
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+configTauMaxInputSlider.addEventListener('input', (e) => {
+    const tauMax = parseFloat(e.target.value);
+    configTauMaxOutput.textContent = formatExp(tauMax);
+
+    validateTauRange();
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+configPpdInputSlider.addEventListener('input', (e) => {
+    const ppd = parseFloat(e.target.value);
+    configPpdOutput.textContent = ppd;
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+configBasisTypeSelect.addEventListener('change', (e) => {
+    const basisType = e.target.value; // basis-db, basis-ga, basis-cc, basis-hn
+
+    // Depending on the basis type, show the relevant configs
+    toggleBasisConfig(basisType);
+
+    drtAnalysis();
+})
+
+configBasisGAFWHMInputSlider.addEventListener('input', (e) => {
+    const fwhm = parseFloat(e.target.value);
+    configBasisGAFWHMOutput.textContent = fwhm;
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+configBasisCCAlphaInputSlider.addEventListener('input', (e) => {
+    const alpha = parseFloat(e.target.value);
+    configBasisCCAlphaOutput.textContent = alpha;
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+configBasisHNAlphaInputSlider.addEventListener('input', (e) => {
+    const alpha = parseFloat(e.target.value);
+    configBasisHNAlphaOutput.textContent = alpha;
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+configBasisHNBetaInputSlider.addEventListener('input', (e) => {
+    const beta = parseFloat(e.target.value);
+    configBasisHNBetaOutput.textContent = beta;
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+configEpsilonInputSlider.addEventListener('change', (e) => {
+    const epsilon = parseFloat(e.target.value);
+    if (epsilon > -6) {
+        configEpsilonOutput.textContent = formatExp(epsilon);
+    } else {
+        configEpsilonOutput.textContent = 'Off';
+    }
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
+
+// Set defaults at the beginning
+setDefaultParameters();
+
+
 /*
 Plotting EIS data with plotly.js
 */
@@ -6,7 +225,6 @@ function getLayoutColors() {
     return {
         text: style.getPropertyValue('--pico-color').trim(),
         grid: style.getPropertyValue('--pico-muted-border-color').trim(),
-        // frame: style.getPropertyValue('--pico-contrast-border').trim(),
         frame: style.getPropertyValue('--pico-color').trim(),
         accent: style.getPropertyValue('--pico-primary').trim(),
         background: style.getPropertyValue('--pico-background-color').trim(),
@@ -325,160 +543,6 @@ Dropzone.options.eisupload = {
     }
 };
 
-/**
- * Handle configurations
- */
-
-
-// document.getElementById('export-eis').addEventListener('click', exportEISData);
-const configButtonGeneral = document.getElementById('config-button-general');
-const configButtonBasis = document.getElementById('config-button-basis');
-const configContainerGeneral = document.getElementById('config-group-general');
-const configContainerBasis = document.getElementById('config-group-basis');
-
-const configTrimInductivePartToogle = document.getElementById('config-trimInductivePart');
-
-const configTauMinInputSlider = document.getElementById('config-tauMin');
-const configTauMinOutput = document.getElementById('configval-tauMin');
-
-const configTauMaxInputSlider = document.getElementById('config-tauMax');
-const configTauMaxOutput = document.getElementById('configval-tauMax');
-
-const tauWarningElement = document.getElementById('tau-warning');
-
-const configPpdInputSlider = document.getElementById('config-ppd');
-const configPpdOutput = document.getElementById('configval-ppd');
-
-const configAlphaInputSlider = document.getElementById('config-alpha');
-const configAlphaOutput = document.getElementById('configval-alpha');
-
-const configBasisTypeSelect = document.getElementById('config-basis-type');
-const configBasisDBConfigOutput = document.getElementById('basis-config-db');
-const configBasisGAConfigOutput = document.getElementById('basis-config-ga');
-const configBasisCCConfigOutput = document.getElementById('basis-config-cc');
-const configBasisHNConfigOutput = document.getElementById('basis-config-hn');
-
-// Set defaults
-function configSwitchToGeneral() {
-    configButtonGeneral.classList.remove('outline');
-    configButtonBasis.classList.add('outline');
-    configContainerGeneral.style.display = 'block';
-    configContainerBasis.style.display = 'none';
-}
-
-function configSwitchToBasis() {
-    configButtonGeneral.classList.add('outline');
-    configButtonBasis.classList.remove('outline');
-    configContainerGeneral.style.display = 'none';
-    configContainerBasis.style.display = 'block';
-}
-
-configSwitchToGeneral();
-configButtonGeneral.addEventListener('click', configSwitchToGeneral);
-configButtonBasis.addEventListener('click', configSwitchToBasis);
-
-configTrimInductivePartToogle.checked = true;
-
-configTrimInductivePartToogle.addEventListener('input', (e) => {
-    // Run DRT once value is changed
-    drtAnalysis();
-})
-
-configTauMinInputSlider.value = -6;
-configTauMinOutput.textContent = formatExp(-6);
-
-configTauMaxInputSlider.value = 6;
-configTauMaxOutput.textContent = formatExp(6);
-
-configTauMinInputSlider.addEventListener('input', (e) => {
-    const tauMin = parseFloat(e.target.value);
-    configTauMinOutput.textContent = formatExp(tauMin);
-
-    validateTauRange();
-
-    // Run DRT once value is changed
-    drtAnalysis();
-});
-
-configTauMaxInputSlider.addEventListener('input', (e) => {
-    const tauMax = parseFloat(e.target.value);
-    configTauMaxOutput.textContent = formatExp(tauMax);
-
-    validateTauRange();
-
-    // Run DRT once value is changed
-    drtAnalysis();
-});
-
-configPpdInputSlider.value = 40;
-configPpdOutput.textContent = 40;
-
-configPpdInputSlider.addEventListener('input', (e) => {
-    const ppd = parseFloat(e.target.value);
-    configPpdOutput.textContent = ppd;
-
-    // Run DRT once value is changed
-    drtAnalysis();
-});
-
-function validateTauRange() {
-    const tauMinExp = parseFloat(configTauMinInputSlider.value);
-    const tauMaxExp = parseFloat(configTauMaxInputSlider.value);
-    const isValid = (tauMaxExp - tauMinExp) >= 1;
-
-    tauWarningElement.hidden = isValid;
-}
-
-function toggleBasisConfig(basisType = 'basis-cc') {
-    console.log(basisType);
-    switch (basisType) {
-        case 'basis-db':
-            configBasisDBConfigOutput.style.display = 'block';
-            configBasisGAConfigOutput.style.display = 'hidden';
-            configBasisCCConfigOutput.style.display = 'hidden';
-            configBasisHNConfigOutput.style.display = 'hidden';
-            break;
-        case 'basis-ga':
-            configBasisDBConfigOutput.style.display = 'hidden';
-            configBasisGAConfigOutput.style.display = 'block';
-            configBasisCCConfigOutput.style.display = 'hidden';
-            configBasisHNConfigOutput.style.display = 'hidden';
-            break;
-        case 'basis-hn':
-            configBasisDBConfigOutput.style.display = 'hidden';
-            configBasisGAConfigOutput.style.display = 'hidden';
-            configBasisCCConfigOutput.style.display = 'hidden';
-            configBasisHNConfigOutput.style.display = 'block';
-            break;
-        default: // Cole-Cole
-            configBasisDBConfigOutput.style.display = 'hidden';
-            configBasisGAConfigOutput.style.display = 'hidden';
-            configBasisCCConfigOutput.style.display = 'block';
-            configBasisHNConfigOutput.style.display = 'hidden';
-            break;
-    }
-}
-
-// Set default
-toggleBasisConfig();
-
-configBasisTypeSelect.addEventListener('change', (e) => {
-    const basisType = e.target.value; // basis-db, basis-ga, basis-cc, basis-hn
-
-    // Depending on the basis type, show the relevant configs
-    toggleBasisConfig(basisType);
-})
-
-configAlphaInputSlider.value = 0.92;
-configAlphaOutput.textContent = 0.92;
-
-configAlphaInputSlider.addEventListener('input', (e) => {
-    const alpha = parseFloat(e.target.value);
-    configAlphaOutput.textContent = alpha;
-
-    // Run DRT once value is changed
-    drtAnalysis();
-});
 
 /**
  * Handle the DRT computations and stuff
@@ -491,12 +555,57 @@ function drtAnalysis() {
         return; 
     }
 
-    const drt = new ColeColeDRT(eisData.frequencyData, eisData.impedanceData, option = {
-        alpha: parseFloat(configAlphaInputSlider.value),
-        tauMin: Math.pow(10, parseFloat(configTauMinInputSlider.value)),
-        tauMax: Math.pow(10, parseFloat(configTauMaxInputSlider.value)),
-        tauRangePointsPerDecade: parseFloat(configPpdInputSlider.value)
-    });
+    // Get type of DRT and the configs
+    const configBasisType = configBasisTypeSelect.value;
+    const configEpsilon = parseFloat(configEpsilonInputSlider.value);
+    const configTauMin = Math.pow(10, parseFloat(configTauMinInputSlider.value));
+    const configTauMax = Math.pow(10, parseFloat(configTauMaxInputSlider.value));
+    const configTauRangePointsPerDecade = parseFloat(configPpdInputSlider.value);
+
+    const epsilon = (configEpsilon > -6) ? formatExp(configEpsilon) : false;
+
+    let drt;
+    switch (configBasisType) {
+        case 'basis-db': 
+            drt = new DebyeDRT(eisData.frequencyData, eisData.impedanceData, option = {
+                tauMin: configTauMin,
+                tauMax: configTauMax,
+                tauRangePointsPerDecade: configTauRangePointsPerDecade,
+                epsilon: epsilon
+            });
+            break;
+        case 'basis-ga': 
+            const configFWHM = parseFloat(configBasisGAFWHMInputSlider.value);
+            drt = new GaussDRT(eisData.frequencyData, eisData.impedanceData, option = {
+                fwhm: configFWHM,
+                tauMin: configTauMin,
+                tauMax: configTauMax,
+                tauRangePointsPerDecade: configTauRangePointsPerDecade,
+                epsilon: epsilon
+            });
+            break;
+        case 'basis-hn':
+            const configHNAlpha = parseFloat(configBasisHNAlphaInputSlider.value);
+            const configHNBeta = parseFloat(configBasisHNBetaInputSlider.value);
+            drt = new HavriliakNegamiDRT(eisData.frequencyData, eisData.impedanceData, option = {
+                alpha: configHNAlpha,
+                beta: configHNBeta,
+                tauMin: configTauMin,
+                tauMax: configTauMax,
+                tauRangePointsPerDecade: configTauRangePointsPerDecade,
+                epsilon: epsilon
+            });
+            break;
+        default: // Cole-Cole
+            const configCCAlpha = parseFloat(configBasisCCAlphaInputSlider.value);
+            drt = new ColeColeDRT(eisData.frequencyData, eisData.impedanceData, option = {
+                alpha: configCCAlpha,
+                tauMin: configTauMin,
+                tauMax: configTauMax,
+                tauRangePointsPerDecade: configTauRangePointsPerDecade,
+                epsilon: epsilon
+            });
+    };
 
     const drtPeakList = drt.getSeparatedPeakList();
 

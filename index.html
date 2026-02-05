@@ -62,8 +62,9 @@
                         <summary>Options</summary>
                         <article>
                             <div role="group">
-                                <button id="config-button-general">General</button>
-                                <button id="config-button-basis" class="outline">Basis functions</button>
+                                <button id="config-button-general" class="config-menu"><svg width="20" height="20"><use href="#icon-config"></use></svg> General</button>
+                                <button id="config-button-basis" class="config-menu"><svg width="20" height="20"><use href="#icon-function"></use></svg> Basis functions</button>
+                                <button id="config-button-reset" class="config-menu secondary"><svg width="20" height="20"><use href="#icon-reset"></use></svg> Reset</button>
                             </div>
 
                             <div id="config-group-general">
@@ -96,6 +97,19 @@
                                     <br />
                                     <small class="config-info">Increasing the resolution yields smoother DRTs (e.g., for export) while leading to longer computation times.</small>
                                 </label>
+
+                                <hr />
+
+                                <label>
+                                    Tikhonov regularization parameter (ε): <span class="param" id="configval-epsilon">N/A</span>
+                                    <input type="range" id="config-epsilon" min="-6" max="-3", step="0.1" value="-6"/>
+                                    <br />
+                                    <small class="config-info">
+                                        Higher values result in more aggressive regularization (and potentially overfitting). 
+                                        Setting this value to 0 deactivates regularization, which is typically a good choice for non-Debye bases.
+                                        NOTE: Regularization slows down the computation.
+                                    </small>
+                                </label>
                             </div>
 
                             <div id="config-group-basis">
@@ -108,42 +122,67 @@
                                 </select>
                                 <small class="config-info">
                                     The discretization basis defines the underlying model used to approximate the DRT.
-                                    The Debye basis assumes ideal RC elements and is the most commonly used DRT method. 
-                                    It typically requires regularization (which is mostly not needed for the other bases).
-                                    The Cole-Cole basis assumes ZARC elements (with non-ideal capacitances), making it a great fit for real-world impedance spectra of porous electrodes.
+                                    For most cases, the Cole-Cole basis (presuming ZARC elements) is a reasonable choice.
                                     More information on the bases can be found here: <a href="https://doi.org/10.1016/j.jpowsour.2025.237403" target="_blank">DOI:10.1016/j.jpowsour.2025.237403</a>.
                                 </small>
 
-                                <hr />
-
                                 <div id="basis-config-db">
-                                    <label>Regularization is all you can do.</label>
+                                    <small class="config-info">
+                                        The Debye basis is what is used in most commonly available DRT methods. 
+                                        Therein, the impedance is reconstructed using ideal RC elements (i.e., <a href="https://en.wikipedia.org/wiki/Dirac_delta_function" target="_blank">Dirac pulses</a> in the relaxation time domain), yielding singular DRT peaks.
+                                        Thus, regularization (e.g., Tikhonov) is typically required to avoid overfitting.
+                                    </small>
                                 </div>
 
                                 <div id="basis-config-ga">
-                                    <label>Soon.</label>
+                                    <small class="config-info">
+                                        The <a href="https://en.wikipedia.org/wiki/Gaussian_function" target="_blank">Gaussian basis</a> presumes normally-distributed relaxation time constants around a central value.
+                                        Its shape is controlled by the full-width at half maximum (which is related to the standard deviation).
+                                        Note: For real-world systems involving porous electrodes, the Cole-Cole basis is typically more accurate.
+                                    </small>
+                                    <hr />
+                                    <label>
+                                        Full-width at half maximum (FWHM): <span class="param" id="configval-ga-fwhm">N/A</span>
+                                        <input type="range" id="config-ga-fwhm" min="0.01" max="0.99", step="0.01" value="0.2"/>
+                                        <br />
+                                        <small class="config-info">Soon.</small>
+                                    </label>
                                 </div>
 
                                 <div id="basis-config-cc">
+                                    <small class="config-info">
+                                        The <a href="https://en.wikipedia.org/wiki/Cole%E2%80%93Cole_equation" target="_blank">Cole-Cole basis</a> assumes ZARC elements (with non-ideal capacitances), making it a great fit for real-world impedance spectra of porous electrodes.
+                                        The shape is defined by α and regularization is typically not needed.
+                                    </small>
+                                    <hr />
                                     <label>
-                                        DRT shape parameter (α): <span class="param" id="configval-alpha">N/A</span>
-                                        <input type="range" id="config-alpha" min="0.5" max="0.99", step="0.01" value="0.92"/>
+                                        DRT shape parameter (α): <span class="param" id="configval-cc-alpha">N/A</span>
+                                        <input type="range" id="config-cc-alpha" min="0.5" max="0.99", step="0.01" value="0.92"/>
                                         <br />
                                         <small class="config-info">Values close to 1 reflect "ideal" capacitances (i.e., perfect semicircle in the Nyquist representation). Smaller α represent more depressed semicircles.</small>
                                     </label>
                                 </div>
 
                                 <div id="basis-config-hn">
-                                    <label>Soon.</label>
+                                    <small class="config-info">
+                                        The <a href="https://en.wikipedia.org/wiki/Havriliak%E2%80%93Negami_relaxation" target="_blank">Havriliak-Negami relaxation</a> is used to model dispserved, skewed processes.
+                                        It comprises two shape parameters (α and β), controlling the shape and asymmetry of the basis function, respectively.
+                                    </small>
+                                    <hr />
+                                    <label>
+                                        DRT shape parameter (α): <span class="param" id="configval-hn-alpha">N/A</span>
+                                        <input type="range" id="config-hn-alpha" min="0.5" max="0.99", step="0.01" value="0.92"/>
+                                        <br />
+                                        <small class="config-info">Values close to 1 reflect "ideal" capacitances (i.e., perfect semicircle in the Nyquist representation). Smaller α represent more depressed semicircles.</small>
+                                    </label>
+                                    
+                                    <label>
+                                        DRT shape parameter (β): <span class="param" id="configval-hn-beta">N/A</span>
+                                        <input type="range" id="config-hn-beta" min="0.01" max="1", step="0.01" value="0.9"/>
+                                        <br />
+                                        <small class="config-info">For β = 1, this basis reduces to the Cole-Cole relaxation basis. For smaller values, the basis functions become more asymmetric, resembling more heterogeneous processes (<a href="https://doi.org/10.1016/S0167-2738(02)00185-6" target="_blank">Gerischer elements</a>, etc.).</small>
+                                    </label>
                                 </div>
-
-                                <hr />
-                                <label>
-                                    Tikhonov regularization parameter (ε): <span class="param" id="configval-epsilon">N/A</span>
-                                    <input type="range" id="config-epsilon" min="0" max="1", step="0.1" value="0"/>
-                                    <br />
-                                    <small class="config-info">Higher values result in more aggressive regularization (and potentially overfitting). Setting this value to 0 deactivates regularization, which is typically a good choice for non-Debye bases.</small>
-                                </label>
                             </div>
                         </article>
                     </details>
@@ -187,6 +226,23 @@
 				<path d="M12 8v8"/>
 			</symbol>
 
+            <symbol id="icon-config" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-align-horizontal-distribute-center-icon lucide-align-horizontal-distribute-center">
+				<path d="M11 10.27 7 3.34"/>
+                <path d="m11 13.73-4 6.93"/>
+                <path d="M12 22v-2"/>
+                <path d="M12 2v2"/>
+                <path d="M14 12h8"/>
+                <path d="m17 20.66-1-1.73"/>
+                <path d="m17 3.34-1 1.73"/>
+                <path d="M2 12h2"/>
+                <path d="m20.66 17-1.73-1"/>
+                <path d="m20.66 7-1.73 1"/>
+                <path d="m3.34 17 1.73-1"/>
+                <path d="m3.34 7 1.73 1"/>
+                <circle cx="12" cy="12" r="2"/>
+                <circle cx="12" cy="12" r="8"/>
+			</symbol>
+
 			<symbol id="icon-del" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-align-horizontal-distribute-center-icon lucide-align-horizontal-distribute-center">
 				<path d="M10 11v6"/>
 				<path d="M14 11v6"/>
@@ -206,10 +262,24 @@
 				<circle cx="12" cy="12" r="3"/>
 			</symbol>
 
-            <symbol id="icon-info" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-align-horizontal-distribute-center-icon lucide-align-horizontal-distribute-center">
-				<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+            <symbol id="icon-function" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-align-horizontal-distribute-center-icon lucide-align-horizontal-distribute-center">
+				<path d="M3 3v16a2 2 0 0 0 2 2h16"/>
+                <path d="M7 16c.5-2 1.5-7 4-7 2 0 2 3 4 3 2.5 0 4.5-5 5-7"/>
 			</symbol>
 
+            <symbol id="icon-info" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-align-horizontal-distribute-center-icon lucide-align-horizontal-distribute-center">
+				<circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4"/>
+                <path d="M12 8h.01"/>
+			</symbol>
+
+            <symbol id="icon-reset" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-align-horizontal-distribute-center-icon lucide-align-horizontal-distribute-center">
+				<path d="M21 5H3"/>
+                <path d="M7 12H3"/>
+                <path d="M7 19H3"/>
+                <path d="M12 18a5 5 0 0 0 9-3 4.5 4.5 0 0 0-4.5-4.5c-1.33 0-2.54.54-3.41 1.41L11 14"/>
+                <path d="M11 10v4h4"/>
+			</symbol>
         </svg>
 
         <!-- Layout for added files -->

@@ -58,6 +58,11 @@ button {
     background-color: var(--pico-code-background-color);
 }
 
+button.config-menu {
+    font-size: normal;
+    padding: 0.2rem 1rem;
+}
+
 small.config-info {
     color: var(--pico-muted-color);
 }

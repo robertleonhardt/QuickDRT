@@ -230,6 +230,13 @@ class DRT {
             return wHat;
         })
 
+        // Merge neighboring peaks
+        const wHatMerged = this._mergeNeighboringPeaks(wHatRefined);
+
+        return wHatMerged;
+    }
+
+    _mergeNeighboringPeaks(wHatRefined) {
         // Now, merge neighboring peaks (see PyDRT documentation for more details)
         const wHatStripped = [...wHatRefined];
         const wHatMerged = Array(wHatRefined.length).fill(0);
@@ -374,6 +381,84 @@ class DRT {
 
 }
 
+class DebyeDRT extends DRT {
+
+    constructor(frequencyData, impedanceData, options = {}) {
+        super(frequencyData, impedanceData, { ...options });
+    }
+
+    _getBasisMatrix() {
+        return Matrix.eye(this.tau.length);
+    }
+
+    _mergeNeighboringPeaks(wHatRefined) {
+        // No peak merging here - just return the input
+        return wHatRefined;
+    }
+
+    getSeparatedPeakList() {
+        return [];
+    }
+
+}
+
+class GaussDRT extends DRT {
+
+    constructor(frequencyData, impedanceData, options = {}) {
+        // Check if solving is anticipated
+        const solveOnStart = options.solve ?? true;
+
+        // Go, call your parents
+        super(frequencyData, impedanceData, { ...options, solve: false });
+
+        // Store config
+        this.fwhm = options.fwhm ?? 0.2;
+
+        // Solve, if asked
+        if (solveOnStart) {
+            this.solve();
+        }
+    }
+
+    _getBasisMatrix() {
+        const numTau = this.tau.length;
+
+        // FWHM = 2 * sqrt(2 * ln(2)) * c => c = (ln(10) * fwhm) / (2 * sqrt(2 * ln(2)))
+        const c = (Math.LN10 * this.fwhm) / (2 * Math.sqrt(2 * Math.LN2));
+
+        // Normalization
+        const norm = 1 / Math.sqrt(2 * Math.PI * c * c);
+
+        // Precompute ln(tau / tau0)
+        const lnTau = this.tau.map(t => Math.log(t));
+
+        // Make some basis
+        const B = Matrix.zeros(numTau, numTau);
+        for (let i = 0; i < numTau; i++) {
+            for (let j = 0; j < numTau; j++) {
+                const diff = lnTau[i] - lnTau[j];
+                const basis = norm * Math.exp(-(diff * diff) / (2 * c * c));
+                B.set(i, j, basis);
+            }
+        }
+
+        return B;
+    }
+
+    _getCapacitance(tau, R) {
+        return tau / R; // This should be reconsidered, though
+    }
+
+    getSingleProcessImpedance(tau, RPeak, ROffset) {
+        // NOTE: There is not really a good impedance equivalent for a Gauss DRT
+        const re = [];
+        const im = [];
+
+        return { re, im };
+    }
+
+}
+
 class ColeColeDRT extends DRT {
 
     constructor(frequencyData, impedanceData, options = {}) {
@@ -438,6 +523,87 @@ class ColeColeDRT extends DRT {
 
             re.push(ROffset + RPeak * denomRe / denomMagSquare);
             im.push(-RPeak * denomIm / denomMagSquare);
+        }
+
+        return { re, im };
+    }
+
+}
+
+class HavriliakNegamiDRT extends DRT {
+
+    constructor(frequencyData, impedanceData, options = {}) {
+        // Check if solving is anticipated
+        const solveOnStart = options.solve ?? true;
+
+        // Go, call your parents
+        super(frequencyData, impedanceData, { ...options, solve: false });
+
+        // Store config
+        this.alpha = options.alpha ?? 0.92;
+        this.beta = options.beta ?? 0.9;
+
+        // Solve, if asked
+        if (solveOnStart) {
+            this.solve();
+        }
+    }
+
+    _getBasisMatrix() {
+        const numTau = this.tau.length;
+
+        // Setup basis matrix
+        const B = Matrix.zeros(numTau, numTau);
+
+        const sinPiAlpha = Math.sin(Math.PI * this.alpha);
+        const cosPiAlpha = Math.cos(Math.PI * this.alpha);
+
+        for (let i = 0; i < numTau; i++) {
+            for (let j = 0; j < numTau; j++) {
+                const tauC = this.tau[i] / this.tau[j];
+                const tauCAlpha = Math.pow(tauC, this.alpha);
+
+                const theta = Math.PI / 2 - Math.atan((tauCAlpha + cosPiAlpha) / sinPiAlpha);
+                const denom = Math.pow(1 + 2 * cosPiAlpha * tauCAlpha + Math.pow(tauC, 2 * this.alpha), this.beta / 2);
+
+                const basis = (1 / Math.PI) * Math.pow(tauC, this.alpha * this.beta) * Math.sin(this.beta * theta) / denom;
+
+                B.set(i, j, basis);
+            }
+        }
+
+        return B;
+    }
+
+    _getCapacitance(tau, R) {
+        // Should be revalidated
+        return Math.pow(Math.pow(tau, this.alpha * this.beta) / R, 1 / this.beta);
+    }
+
+    getSingleProcessImpedance(tau, RPeak, ROffset) {
+        const re = [];
+        const im = [];
+
+        // Precalc trig stuff
+        const sinAlpha = Math.sin(Math.PI * this.alpha / 2);
+        const cosAlpha = Math.cos(Math.PI * this.alpha / 2);
+
+        // Compute impedance for all frequencies
+        const simulationFrequencyList = this._origInputFrequencyData; // this.tau.map(x => 2 * Math.PI / x);
+        for (const f of simulationFrequencyList) {
+            const omegaTauAlpha = Math.pow(2 * Math.PI * f * tau, this.alpha);
+
+            const realPart = 1 + omegaTauAlpha * cosAlpha;
+            const imagPart = omegaTauAlpha * sinAlpha;
+
+            const mag = Math.sqrt(realPart * realPart + imagPart * imagPart);
+            const theta = Math.atan2(imagPart, realPart);
+
+            const magBeta = Math.pow(mag, this.beta);
+            const phaseBeta = this.beta * theta;
+
+            re.push(ROffset + RPeak * Math.cos(phaseBeta) / magBeta);
+            im.push(-RPeak * Math.sin(phaseBeta) / magBeta);
         }
 
         return { re, im };
