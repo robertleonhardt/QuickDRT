@@ -54,6 +54,17 @@ const exportDRTDataButton = document.getElementById('export-drt');
 const markWarningBasisDBOutput = document.getElementById('basis-limit-db');
 const markWarningBasisGAOutput = document.getElementById('basis-limit-ga');
 
+const metadataFilenameDisplay = document.getElementById('metadata-filename');
+const metadataLabelDisplay = document.getElementById('metadata-label');
+const metadataDateDisplay = document.getElementById('metadata-date');
+const metadataMeanOCVDisplay = document.getElementById('metadata-pre-voltage');
+const metadataMeanTempDisplay = document.getElementById('metadata-pre-temp');
+const metadataVACDisplay = document.getElementById('metadata-vac');
+
+const openDialogAboutLink = document.getElementById('open-dialog-about');
+const dialogAboutDisplay = document.getElementById('dialog-about');
+const dialogAboutCloseLink = document.getElementById('dialog-about-close');
+
 // Set defaults
 function setDefaultParameters() {
     configSwitchToGeneral();
@@ -246,9 +257,17 @@ configEpsilonInputSlider.addEventListener('change', (e) => {
 exportEISDataButton.addEventListener('click', exportEISData);
 exportDRTDataButton.addEventListener('click', exportDRTData);
 
+openDialogAboutLink.addEventListener('click', (e) => {
+    dialogAboutDisplay.open = true;
+});
+
+dialogAboutCloseLink.addEventListener('click', (e) => {
+    dialogAboutDisplay.open = false;
+});
+
 // Set defaults at the beginning
 setDefaultParameters();
-
+dialogAboutDisplay.open = false;
 
 /*
 Plotting EIS data with plotly.js
@@ -823,9 +842,12 @@ function setupLinkedHoverEvents(drtPeakList, alpha) {
 
 // Function to show information
 function updateMetadataDispaly(metadata, file) {
-    document.getElementById('metadata-filename').textContent = file.name;
-    document.getElementById('metadata-label').textContent = metadata.label;
-    document.getElementById('metadata-date').textContent = metadata.date;
+    metadataFilenameDisplay.textContent = file.name;
+    metadataLabelDisplay.textContent = metadata.label;
+    metadataDateDisplay.textContent = metadata.date;
+    metadataMeanOCVDisplay.textContent = metadata.meanPreTestOCP_V.toPrecision(4) ?? 'N/A';
+    metadataMeanTempDisplay.textContent = metadata.meanPreTestTemp_degC.toPrecision(4) ?? 'N/A';
+    metadataVACDisplay.textContent = metadata.vac_mV ?? 'N/A';
 }
 
 // Some helpers

@@ -25,7 +25,7 @@
                     <li><h2>Basis function DRT demo</h2></li>
 				</ul>
 				<ul>
-                    <li><a href="#">About</a></li>
+                    <li><a id="open-dialog-about" href="#">About</a></li>
 					<li><a href="https://github.com/robertleonhardt/QuickDRT" target="_blank">GitHub project</a></li>
 				</ul>
 			</nav>
@@ -52,7 +52,17 @@
 
                                 <dt>Date</dt>
                                 <dd id="metadata-date">N/A</dd>
+
+                                <dt>OCV before test (V)</dt>
+                                <dd id="metadata-pre-voltage">N/A</dd>
+
+                                <dt>Temperature before test (°C)</dt>
+                                <dd id="metadata-pre-temp">N/A</dd>
+
+                                <dt>VAC (mV)</dt>
+                                <dd id="metadata-vac">N/A</dd>
                             </dl>
+                            <!-- <small><a href="#">See full metadata</a></small> -->
                         </article>
                     </details>
                     
@@ -209,12 +219,69 @@
        		</div>
 		</main>
 
+        <!-- More content (modals) -->
+        <dialog id="dialog-about" open>
+            <article>
+                <div class="head">
+                    <h2>About</h2>
+                    <span id="dialog-about-close"><svg width="20" height="20"><use href="#icon-close"></use></svg></span>
+                </div>
+                <p>
+                    QuickDRT is a fast and easy-to-use tool (or demo at this point) to compute distribution of relaxation time functions (DRTs) from measured impedance data.
+                    In an attempt to make this technique more accessible, it is build on a JavaScript implementation of <a href="https://github.com/robertleonhardt/PyDRT" target="_blank">PyDRT</a>, so it runs without any Python backend in the browser (even on mobile devices).
+                    It can also be downloaded (see <a href="https://github.com/robertleonhardt/QuickDRT" target="_blank">github.com/robertleonhardt/QuickDRT</a>) for offline use (handy for Gamry computers, though).
+                </p>
+                <p>
+                    The fundamental approach for DRT reconstruction used is based on basis functions; see <a href="https://doi.org/10.1016/j.jpowsour.2025.237403" target="_blank">DOI:10.1016/j.jpowsour.2025.237403</a> for more details.
+                    If this tool is helpful to you, please consider citing our underlying work:
+                </p>
+                <blockquote>
+                    Leonhardt, R., Krug von Nidda, J., Andrae, D., Schmidt, A., Kowal, J., & Tichter, T. (2025). Reconstructing the distribution of relaxation times with analytical basis functions. Journal of Power Sources 652.
+                    <br />
+                    <a href="https://doi.org/10.1016/j.jpowsour.2025.237403" target="_blank">Link</a>
+                </blockquote>
+
+                <hr />
+
+                For any inquiries, ideas, and questions, feel free to contact me on <a href="https://www.linkedin.com/in/robert-leonhardt-a2a3b6166/" target="_blank">LinkedIn</a> or via <a href="https://github.com/robertleonhardt/QuickDRT" target="_blank">github.com/robertleonhardt/QuickDRT</a>.
+
+                <hr />
+
+                <p>
+                    Main references & acknowlegdements:
+                    <ul>
+                        <li>
+                            Wan, T. H., et al. (2015). "Influence of the Discretization Methods on the Distribution of Relaxation Times Deconvolution: Implementing Radial Basis Functions with DRTtools." Electrochimica Acta 184: 483-499. <br />
+                            <small>(Basis function DRT reconstruction)</small>
+                        </li>
+                        <li>
+                            T. Ticher. <a href="https://github.com/Polarographica/Polarographica_program" target="_blank">https://github.com/Polarographica/Polarographica_program</a> <br />
+                            <small>(Analytical basis function; Cole-Cole and Havriliak-Negami)</small>
+                        </li>
+                    </ul>
+                    Moreover, the following tools & libraries were used for this project:
+                    <ul>
+                        <li><a href="https://picocss.com/" target="_blank">picocss.com</a> <small>(The overall layout and looks)</small></li>
+                        <li><a href="https://lucide.dev/" target="_blank">lucide.dev</a> <small>(All icons)</small></li>
+                        <li><a href="https://plotly.com/" target="_blank">plotly.com</a> <small>(All interactive plots)</small></li>
+                        <li><a href="https://claude.ai/" target="_blank">claude.ai</a> <small>(JS-implementation of the used <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.nnls.html" target="_blank">NNLS solver</a>)</small></li>
+                    </ul>
+                    
+                </p>
+            </article>
+        </dialog>
+
 		<!-- Some icons -->
 		<svg style="display:none">
 			<symbol id="icon-add" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-align-horizontal-distribute-center-icon lucide-align-horizontal-distribute-center">
 				<circle cx="12" cy="12" r="10"/>
 				<path d="M8 12h8"/>
 				<path d="M12 8v8"/>
+			</symbol>
+
+            <symbol id="icon-close" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-align-horizontal-distribute-center-icon lucide-align-horizontal-distribute-center">
+				<path d="M18 6 6 18"/>
+                <path d="m6 6 12 12"/>
 			</symbol>
 
             <symbol id="icon-config" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-align-horizontal-distribute-center-icon lucide-align-horizontal-distribute-center">

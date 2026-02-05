@@ -1,7 +1,7 @@
 header {
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 100;
     background: color-mix(in srgb, var(--pico-background-color) 70%, transparent);
     backdrop-filter: blur(10px) saturate(120%);
     -webkit-backdrop-filter: blur(10px) saturate(120%);
@@ -90,11 +90,13 @@ dl.metadata {
 
 dl.metadata dt {
     font-weight: 600;
+    font-size: smaller;
 }
 
 dl.metadata dd {
     margin: 0;
     color: var(--pico-primary);
+    font-size: smaller;
 }
 
 span.param {
@@ -123,4 +125,33 @@ mark.notice {
     padding: 0.5rem;
     border-radius: var(--pico-border-radius);
     margin-bottom: 0.8rem;
+}
+
+dialog {
+    font-size: smaller;
+}
+
+dialog .head {
+    display: flex;
+    justify-content: space-between;
+}
+
+dialog .head svg {
+    vertical-align: middle;
+    position: relative;
+    top: -2px;
+    cursor: pointer;
+}
+
+dialog h2 {
+    font-weight: 500;
+    font-size: larger;
+}
+
+dialog blockquote {
+    color: var(--pico-muted-color);
+}
+
+dialog ul small {
+    color: var(--pico-muted-color);
 }
