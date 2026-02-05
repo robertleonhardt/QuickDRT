@@ -48,6 +48,13 @@ button {
     /* min-width: 800px; */
 }
 
+.left-pane summary svg {
+    vertical-align: middle;
+    margin-right: 0.5rem;
+    position: relative;
+    top: -2px;
+}
+
 .dropzone {
     background-color: var(--pico-card-background-color);
     border: 1px solid var(--pico-muted-border-color);
@@ -67,8 +74,8 @@ small.config-info {
     color: var(--pico-muted-color);
 }
 
-div.eisplot {
-    height: 600px;
+div.mainplot {
+    height: 550px;
     background-color: var(--pico-card-background-color);
     border: 1px solid var(--pico-muted-border-color);
     border-radius: var(--pico-border-radius);
@@ -107,4 +114,13 @@ span.param {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-
+mark.notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: var(--pico-border-radius);
+    margin-bottom: 0.8rem;
+}

@@ -51,6 +51,9 @@ const configEpsilonOutput = document.getElementById('configval-epsilon');
 const exportEISDataButton = document.getElementById('export-eis');
 const exportDRTDataButton = document.getElementById('export-drt');
 
+const markWarningBasisDBOutput = document.getElementById('basis-limit-db');
+const markWarningBasisGAOutput = document.getElementById('basis-limit-ga');
+
 // Set defaults
 function setDefaultParameters() {
     configSwitchToGeneral();
@@ -85,6 +88,9 @@ function setDefaultParameters() {
 
     exportEISDataButton.disabled = true;
     exportDRTDataButton.disabled = true;
+
+    markWarningBasisDBOutput.style.display = 'none';
+    markWarningBasisGAOutput.style.display = 'none';
 }
 
 // Helper functions
@@ -117,24 +123,32 @@ function toggleBasisConfig(basisType = 'basis-cc') {
             configBasisGAConfigOutput.style.display = 'none';
             configBasisCCConfigOutput.style.display = 'none';
             configBasisHNConfigOutput.style.display = 'none';
+            markWarningBasisDBOutput.style.display = 'flex';
+            markWarningBasisGAOutput.style.display = 'none';
             break;
         case 'basis-ga':
             configBasisDBConfigOutput.style.display = 'none';
             configBasisGAConfigOutput.style.display = 'block';
             configBasisCCConfigOutput.style.display = 'none';
             configBasisHNConfigOutput.style.display = 'none';
+            markWarningBasisDBOutput.style.display = 'none';
+            markWarningBasisGAOutput.style.display = 'flex';
             break;
         case 'basis-hn':
             configBasisDBConfigOutput.style.display = 'none';
             configBasisGAConfigOutput.style.display = 'none';
             configBasisCCConfigOutput.style.display = 'none';
             configBasisHNConfigOutput.style.display = 'block';
+            markWarningBasisDBOutput.style.display = 'none';
+            markWarningBasisGAOutput.style.display = 'none';
             break;
         default: // Cole-Cole
             configBasisDBConfigOutput.style.display = 'none';
             configBasisGAConfigOutput.style.display = 'none';
             configBasisCCConfigOutput.style.display = 'block';
             configBasisHNConfigOutput.style.display = 'none';
+            markWarningBasisDBOutput.style.display = 'none';
+            markWarningBasisGAOutput.style.display = 'none';
     }
 }
 
@@ -367,6 +381,7 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: colors.text },
+        title: { text: 'EIS data (Nyquist)' },
         xaxis: { 
             title: { text: "Z' / mΩ" },
             gridcolor: colors.grid,
@@ -447,6 +462,7 @@ function plotDRTdata(drt, drtPeakList) {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: colors.text },
+        title: { text: 'Distribution of relaxation times' },
         xaxis: { 
             title: { text: "τ / s" },
             type: 'log',
@@ -571,7 +587,7 @@ function drtAnalysis() {
     let drt;
     switch (configBasisType) {
         case 'basis-db': 
-            drt = new DebyeDRT(eisData.frequencyData, eisData.impedanceData, option = {
+            drt = new DebyeDRT(eisData.frequencyData, eisData.impedanceData, {
                 tauMin: configTauMin,
                 tauMax: configTauMax,
                 tauRangePointsPerDecade: configTauRangePointsPerDecade,
@@ -580,7 +596,7 @@ function drtAnalysis() {
             break;
         case 'basis-ga': 
             const configFWHM = parseFloat(configBasisGAFWHMInputSlider.value);
-            drt = new GaussDRT(eisData.frequencyData, eisData.impedanceData, option = {
+            drt = new GaussDRT(eisData.frequencyData, eisData.impedanceData, {
                 fwhm: configFWHM,
                 tauMin: configTauMin,
                 tauMax: configTauMax,
@@ -591,7 +607,7 @@ function drtAnalysis() {
         case 'basis-hn':
             const configHNAlpha = parseFloat(configBasisHNAlphaInputSlider.value);
             const configHNBeta = parseFloat(configBasisHNBetaInputSlider.value);
-            drt = new HavriliakNegamiDRT(eisData.frequencyData, eisData.impedanceData, option = {
+            drt = new HavriliakNegamiDRT(eisData.frequencyData, eisData.impedanceData, {
                 alpha: configHNAlpha,
                 beta: configHNBeta,
                 tauMin: configTauMin,
@@ -602,7 +618,7 @@ function drtAnalysis() {
             break;
         default: // Cole-Cole
             const configCCAlpha = parseFloat(configBasisCCAlphaInputSlider.value);
-            drt = new ColeColeDRT(eisData.frequencyData, eisData.impedanceData, option = {
+            drt = new ColeColeDRT(eisData.frequencyData, eisData.impedanceData, {
                 alpha: configCCAlpha,
                 tauMin: configTauMin,
                 tauMax: configTauMax,
@@ -614,10 +630,8 @@ function drtAnalysis() {
     const drtPeakList = drt.getSeparatedPeakList();
 
     const impedanceProcessList = [];
-    let i = 0;
     for (const peak of drtPeakList) {
         impedanceProcessList.push(drt.getSingleProcessImpedance(peak.tau, peak.R, peak.ROffset));
-        i++;
     }
 
     // Trim inductive part of EIS data, if requested
@@ -914,7 +928,7 @@ function exportEISData() {
     ].join('\n');
 
     // Generate filename and download the csv
-    const baseName = eisData.file.name.replace(/\.[^.]+$/, '.');
+    const baseName = eisData.file.name.replace(/\.[^.]+$/, '');
     downloadCSV(`${baseName}_eis.csv`, csv);
 }
 
@@ -960,6 +974,6 @@ function exportDRTData() {
     ].join('\n');
 
     // Generate filename and download the csv
-    const baseName = eisData.file.name.replace(/\.[^.]+$/, '.');
+    const baseName = eisData.file.name.replace(/\.[^.]+$/, '');
     downloadCSV(`${baseName}_drt.csv`, csv);
 }
