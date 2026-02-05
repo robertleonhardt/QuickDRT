@@ -58,6 +58,10 @@ button {
     background-color: var(--pico-code-background-color);
 }
 
+small.config-info {
+    color: var(--pico-muted-color);
+}
+
 div.eisplot {
     height: 600px;
     background-color: var(--pico-card-background-color);

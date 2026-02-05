@@ -62,52 +62,77 @@
                         <summary>Options</summary>
                         <article>
                             <div role="group">
-                                <button>General</button>
-                                <button class="outline">Basis functions</button>
+                                <button id="config-button-general">General</button>
+                                <button id="config-button-basis" class="outline">Basis functions</button>
                             </div>
 
-                            <fieldset>
+                            <div id="config-group-general">
+                                <fieldset>
+                                    <label>
+                                        <input name="trimInductivePart" id="config-trimInductivePart" type="checkbox" role="switch" checked/>
+                                        Trim inductive impedance data
+                                    </label>
+                                </fieldset>
+                                <small class="config-info">The inductive part of the impedance is not used for the DRT computation. Trimming it can help with visualization.</small>
+
+                                <hr />
+                                
                                 <label>
-                                    <input name="trimInductivePart" id="config-trimInductivePart" type="checkbox" role="switch" checked/>
-                                    Trim inductive impedance data
+                                    Minimum time constant (in seconds): <span class="param" id="configval-tauMin">N/A</span>
+                                    <input type="range" id="config-tauMin" min="-6" max="6", step="1" value="-3"/>
                                 </label>
-                            </fieldset>
+                                <label>
+                                    Maximum time constant (in seconds): <span class="param" id="configval-tauMax">N/A</span>
+                                    <input type="range" id="config-tauMax" min="-6" max="6", step="1" value="6"/>
+                                </label>
+                                <small id="tau-warning" class="warning" hidden>Note: DRT computation collapses for τ<sub>min</sub> ≥ τ<sub>max</sub><br /></small>
+                                <small class="config-info">Narrowing the time constant range can be used to eliminated high-frequency artifacts or to exclude processes fitted to the diffusion part of the impedance.</small>
 
-                            <hr />
+                                <hr />
+                                
+                                <label>
+                                    DRT resolution (points per decade): <span class="param" id="configval-ppd">N/A</span>
+                                    <input type="range" id="config-ppd" min="10" max="200", step="10" value="40"/>
+                                    <br />
+                                    <small class="config-info">Increasing the resolution yields smoother DRTs (e.g., for export) while leading to longer computation times.</small>
+                                </label>
+                            </div>
 
-                            <select name="select" aria-label="Select" required>
-                                <option selected value="basis-db">Debye basis (classic regularization DRT)</option>
-                                <option value="basis-ga">Gaussian basis</option>
-                                <option selected value="basis-cc" selected>Cole-Cole basis (recommended)</option>
-                                <option value="basis-hn">Havriliak-Negami basis</option>
-                            </select>
+                            <div id="config-group-basis">
+                                <label>Select basis function</label>
+                                <select name="select" aria-label="Select" required>
+                                    <option selected value="basis-db">Debye basis (classic regularization DRT)</option>
+                                    <option value="basis-ga">Gaussian basis</option>
+                                    <option selected value="basis-cc" selected>Cole-Cole basis (recommended)</option>
+                                    <option value="basis-hn">Havriliak-Negami basis</option>
+                                </select>
+                                <small class="config-info">
+                                    The discretization basis defines the underlying model used to approximate the DRT.
+                                    The Debye basis assumes ideal RC elements and is the most commonly used DRT method. 
+                                    It typically requires regularization (which is mostly not needed for the other bases).
+                                    The Cole-Cole basis assumes ZARC elements (with non-ideal capacitances), making it a great fit for real-world impedance spectra of porous electrodes.
+                                    More information on the bases can be found here: <a href="https://doi.org/10.1016/j.jpowsour.2025.237403" target="_blank">DOI:10.1016/j.jpowsour.2025.237403</a>.
+                                </small>
 
-                            <label>
-                                DRT shape parameter (α): <span class="param" id="configval-alpha">N/A</span>
-                                <input type="range" id="config-alpha" min="0.5" max="0.99", step="0.01" value="0.92"/>
-                            </label>
+                                <hr />
 
-                            <hr />
-                            
-                            <label>
-                                Minimum time constant (in seconds): <span class="param" id="configval-tauMin">N/A</span>
-                                <input type="range" id="config-tauMin" min="-6" max="6", step="1" value="-3"/>
-                            </label>
-                            <label>
-                                Maximum time constant (in seconds): <span class="param" id="configval-tauMax">N/A</span>
-                                <input type="range" id="config-tauMax" min="-6" max="6", step="1" value="6"/>
-                            </label>
-                            <small id="tau-warning" class="warning" hidden>
-                                Note: DRT computation collapses for τ<sub>min</sub> ≥ τ<sub>max</sub>
-                            </small>
+                                <div id="basis-config-cc">
+                                    <label>
+                                        DRT shape parameter (α): <span class="param" id="configval-alpha">N/A</span>
+                                        <input type="range" id="config-alpha" min="0.5" max="0.99", step="0.01" value="0.92"/>
+                                        <br />
+                                        <small class="config-info">Values close to 1 reflect "ideal" capacitances (i.e., perfect semicircle in the Nyquist representation). Smaller α represent more depressed semicircles.</small>
+                                    </label>
+                                </div>
 
-                            <hr />
-                            
-                            <label>
-                                DRT resolution (points per decade): <span class="param" id="configval-ppd">N/A</span>
-                                <input type="range" id="config-ppd" min="10" max="200", step="10" value="40"/>
-                            </label>
-                            <small>Increasing the resolution yields smoother DRTs (e.g., for export) while leading to longer computation times.</small>
+                                <hr />
+                                <label>
+                                    Tikhonov regularization parameter (ε): <span class="param" id="configval-epsilon">N/A</span>
+                                    <input type="range" id="config-epsilon" min="0" max="1", step="0.1" value="0"/>
+                                    <br />
+                                    <small class="config-info">Higher values result in more aggressive regularization (and potentially overfitting). Setting this value to 0 deactivates regularization, which is typically a good choice for non-Debye bases.</small>
+                                </label>
+                            </div>
                         </article>
                     </details>
 

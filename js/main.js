@@ -328,6 +328,14 @@ Dropzone.options.eisupload = {
 /**
  * Handle configurations
  */
+
+
+// document.getElementById('export-eis').addEventListener('click', exportEISData);
+const configButtonGeneral = document.getElementById('config-button-general');
+const configButtonBasis = document.getElementById('config-button-basis');
+const configContainerGeneral = document.getElementById('config-group-general');
+const configContainerBasis = document.getElementById('config-group-basis');
+
 const configTrimInductivePartToogle = document.getElementById('config-trimInductivePart');
 
 const configAlphaInputSlider = document.getElementById('config-alpha');
@@ -345,24 +353,33 @@ const configPpdInputSlider = document.getElementById('config-ppd');
 const configPpdOutput = document.getElementById('configval-ppd');
 
 // Set defaults
+function configSwitchToGeneral() {
+    configButtonGeneral.classList.remove('outline');
+    configButtonBasis.classList.add('outline');
+    configContainerGeneral.style.display = 'block';
+    configContainerBasis.style.display = 'none';
+}
+
+function configSwitchToBasis() {
+    configButtonGeneral.classList.add('outline');
+    configButtonBasis.classList.remove('outline');
+    configContainerGeneral.style.display = 'none';
+    configContainerBasis.style.display = 'block';
+}
+
+configSwitchToGeneral();
+configButtonGeneral.addEventListener('click', configSwitchToGeneral);
+configButtonBasis.addEventListener('click', configSwitchToBasis);
+
 configTrimInductivePartToogle.checked = true;
-
-configAlphaInputSlider.value = 0.92;
-configAlphaOutput.textContent = 0.92;
-
-configTauMinInputSlider.value = -6;
-configTauMinOutput.textContent = formatExp(-6);
-
-configTauMaxInputSlider.value = 6;
-configTauMaxOutput.textContent = formatExp(6);
-
-configPpdInputSlider.value = 40;
-configPpdOutput.textContent = 40;
 
 configTrimInductivePartToogle.addEventListener('input', (e) => {
     // Run DRT once value is changed
     drtAnalysis();
 })
+
+configAlphaInputSlider.value = 0.92;
+configAlphaOutput.textContent = 0.92;
 
 configAlphaInputSlider.addEventListener('input', (e) => {
     const alpha = parseFloat(e.target.value);
@@ -371,6 +388,12 @@ configAlphaInputSlider.addEventListener('input', (e) => {
     // Run DRT once value is changed
     drtAnalysis();
 });
+
+configTauMinInputSlider.value = -6;
+configTauMinOutput.textContent = formatExp(-6);
+
+configTauMaxInputSlider.value = 6;
+configTauMaxOutput.textContent = formatExp(6);
 
 configTauMinInputSlider.addEventListener('input', (e) => {
     const tauMin = parseFloat(e.target.value);
@@ -391,6 +414,9 @@ configTauMaxInputSlider.addEventListener('input', (e) => {
     // Run DRT once value is changed
     drtAnalysis();
 });
+
+configPpdInputSlider.value = 40;
+configPpdOutput.textContent = 40;
 
 configPpdInputSlider.addEventListener('input', (e) => {
     const ppd = parseFloat(e.target.value);
