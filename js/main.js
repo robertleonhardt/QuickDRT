@@ -1,4 +1,10 @@
 /**
+ * Some predefinitions for global data
+ */
+let eisData = null;
+let lastDRTResult = null;
+
+/**
  * Interface to user interface
  */
 
@@ -42,6 +48,9 @@ const configBasisHNBetaOutput = document.getElementById('configval-hn-beta');
 const configEpsilonInputSlider = document.getElementById('config-epsilon');
 const configEpsilonOutput = document.getElementById('configval-epsilon');
 
+const exportEISDataButton = document.getElementById('export-eis');
+const exportDRTDataButton = document.getElementById('export-drt');
+
 // Set defaults
 function setDefaultParameters() {
     configSwitchToGeneral();
@@ -57,6 +66,7 @@ function setDefaultParameters() {
     configPpdOutput.textContent = 40;
 
     toggleBasisConfig('basis-cc');
+    configBasisTypeSelect.value = 'basis-cc';
 
     configBasisGAFWHMInputSlider.value = 0.4;
     configBasisGAFWHMOutput.textContent = 0.4;
@@ -72,6 +82,9 @@ function setDefaultParameters() {
 
     configEpsilonInputSlider.value = -6; // Will be treated as zero
     configEpsilonOutput.textContent = 'Off'; // Will be treated as zero
+
+    exportEISDataButton.disabled = true;
+    exportDRTDataButton.disabled = true;
 }
 
 // Helper functions
@@ -128,7 +141,10 @@ function toggleBasisConfig(basisType = 'basis-cc') {
 // Config event handler
 configButtonGeneral.addEventListener('click', configSwitchToGeneral);
 configButtonBasis.addEventListener('click', configSwitchToBasis);
-configButtonReset.addEventListener('click', setDefaultParameters);
+configButtonReset.addEventListener('click', (e) => {
+    setDefaultParameters();
+    drtAnalysis();
+});
 
 configTrimInductivePartToogle.addEventListener('input', drtAnalysis);
 
@@ -213,6 +229,9 @@ configEpsilonInputSlider.addEventListener('change', (e) => {
     drtAnalysis();
 });
 
+exportEISDataButton.addEventListener('click', exportEISData);
+exportDRTDataButton.addEventListener('click', exportDRTData);
+
 // Set defaults at the beginning
 setDefaultParameters();
 
@@ -220,6 +239,8 @@ setDefaultParameters();
 /*
 Plotting EIS data with plotly.js
 */
+
+// Helper functions
 function getLayoutColors() {
     const style = getComputedStyle(document.body);
     return {
@@ -230,23 +251,6 @@ function getLayoutColors() {
         background: style.getPropertyValue('--pico-background-color').trim(),
         fit: style.getPropertyValue('--pico-color-amber-200').trim()
     }
-}
-
-function getPlotColors(index) {
-    const style = getComputedStyle(document.body);
-    const picoColors = [
-        style.getPropertyValue('--pico-color-indigo-650').trim(),
-        style.getPropertyValue('--pico-color-amber-200').trim(),
-        style.getPropertyValue('--pico-color-fuchsia-600').trim(),
-        style.getPropertyValue('--pico-color-lime-200').trim(),
-        style.getPropertyValue('--pico-color-pink-450').trim()
-    ];
-    const viridisColors = [
-        '#440154', '#482878', '#3e4a89', '#31688e', '#26838f',
-        '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725'
-    ];
-    const colors = viridisColors;
-    return colors[index % colors.length];
 }
 
 function getViridisPlotColors(n, alpha = 1) {
@@ -297,6 +301,8 @@ function getViridisPlotColors(n, alpha = 1) {
     return colors;
 }
 
+
+// Main function for the EIS plot
 function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
     // Get colors of the website so the plot is nicer implemented
     const colors = getLayoutColors();
@@ -396,6 +402,7 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
     })
 }
 
+// Main function for the DRT plot
 function plotDRTdata(drt, drtPeakList) {
     // Get colors of the website so the plot is nicer implemented
     const colors = getLayoutColors();
@@ -487,8 +494,6 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 /*
 Dropzone configuration for easy drag-and-drop EIS data upload
 */
-let eisData = null;
-
 Dropzone.options.eisupload = {
     // Config
     paramName: 'file',
@@ -543,12 +548,11 @@ Dropzone.options.eisupload = {
     }
 };
 
-
 /**
  * Handle the DRT computations and stuff
  */
-let lastDRTResult = null;
 
+// Basically the main function of everything
 function drtAnalysis() {
     // Avoid running this without data being parsed
     if (!eisData) {
@@ -654,10 +658,11 @@ function drtAnalysis() {
     setupLinkedHoverEvents(drtPeakList, drt.alpha);
 
     // Activate export buttons
-    document.getElementById('export-eis').disabled = false;
-    document.getElementById('export-drt').disabled = false;
+    exportEISDataButton.disabled = false;
+    exportDRTDataButton.disabled = false;
 }
 
+// Function to highlight single processes
 function highlightProcess(plotDiv, activeTraceIndex, numberOfProcesses, colorMap) {
     // Dim all process traces except the active one
     const opacities = [];
@@ -692,6 +697,7 @@ function highlightProcess(plotDiv, activeTraceIndex, numberOfProcesses, colorMap
     }, Array.from({length: numberOfProcesses}, (_, i) => i));
 }
 
+// Function to un-highlight single processes
 function resetHighlight(plotDiv, numberOfProcesses, colorMap) {
     const opacities = Array(numberOfProcesses).fill(1);
     const lineWidths = Array(numberOfProcesses).fill(1);
@@ -706,6 +712,7 @@ function resetHighlight(plotDiv, numberOfProcesses, colorMap) {
     }, Array.from({length: numberOfProcesses}, (_, i) => i));
 }
 
+// Event listener for the tooltip with infos about a process
 document.addEventListener('mousemove', (e) => {
     const tooltip = document.getElementById('drt-process-tooltip');
     if (tooltip && tooltip.style.display === 'block') {
@@ -714,6 +721,7 @@ document.addEventListener('mousemove', (e) => {
     }
 })
 
+// Tooltip function
 function setupLinkedHoverEvents(drtPeakList, alpha) {
     const eisPlotDiv = document.getElementById('eisplot');
     const drtPlotDiv = document.getElementById('drtplot');
@@ -799,12 +807,14 @@ function setupLinkedHoverEvents(drtPeakList, alpha) {
     });
 }
 
+// Function to show information
 function updateMetadataDispaly(metadata, file) {
     document.getElementById('metadata-filename').textContent = file.name;
     document.getElementById('metadata-label').textContent = metadata.label;
     document.getElementById('metadata-date').textContent = metadata.date;
 }
 
+// Some helpers
 function formatExp(exp) {
     const value = Math.pow(10, exp);
     return value.toExponential(0).replace('+', '');
@@ -953,9 +963,3 @@ function exportDRTData() {
     const baseName = eisData.file.name.replace(/\.[^.]+$/, '.');
     downloadCSV(`${baseName}_drt.csv`, csv);
 }
-
-// Setup download buttons
-document.getElementById('export-eis').disabled = true;
-document.getElementById('export-drt').disabled = true;
-document.getElementById('export-eis').addEventListener('click', exportEISData);
-document.getElementById('export-drt').addEventListener('click', exportDRTData);
