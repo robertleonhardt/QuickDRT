@@ -100,7 +100,7 @@
 
                             <div id="config-group-basis">
                                 <label>Select basis function</label>
-                                <select name="select" aria-label="Select" required>
+                                <select name="select" id="config-basis-type" aria-label="Select" required>
                                     <option selected value="basis-db">Debye basis (classic regularization DRT)</option>
                                     <option value="basis-ga">Gaussian basis</option>
                                     <option selected value="basis-cc" selected>Cole-Cole basis (recommended)</option>
@@ -116,6 +116,14 @@
 
                                 <hr />
 
+                                <div id="basis-config-db">
+                                    <label>Regularization is all you can do.</label>
+                                </div>
+
+                                <div id="basis-config-ga">
+                                    <label>Soon.</label>
+                                </div>
+
                                 <div id="basis-config-cc">
                                     <label>
                                         DRT shape parameter (α): <span class="param" id="configval-alpha">N/A</span>
@@ -123,6 +131,10 @@
                                         <br />
                                         <small class="config-info">Values close to 1 reflect "ideal" capacitances (i.e., perfect semicircle in the Nyquist representation). Smaller α represent more depressed semicircles.</small>
                                     </label>
+                                </div>
+
+                                <div id="basis-config-hn">
+                                    <label>Soon.</label>
                                 </div>
 
                                 <hr />

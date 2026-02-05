@@ -338,9 +338,6 @@ const configContainerBasis = document.getElementById('config-group-basis');
 
 const configTrimInductivePartToogle = document.getElementById('config-trimInductivePart');
 
-const configAlphaInputSlider = document.getElementById('config-alpha');
-const configAlphaOutput = document.getElementById('configval-alpha');
-
 const configTauMinInputSlider = document.getElementById('config-tauMin');
 const configTauMinOutput = document.getElementById('configval-tauMin');
 
@@ -351,6 +348,15 @@ const tauWarningElement = document.getElementById('tau-warning');
 
 const configPpdInputSlider = document.getElementById('config-ppd');
 const configPpdOutput = document.getElementById('configval-ppd');
+
+const configAlphaInputSlider = document.getElementById('config-alpha');
+const configAlphaOutput = document.getElementById('configval-alpha');
+
+const configBasisTypeSelect = document.getElementById('config-basis-type');
+const configBasisDBConfigOutput = document.getElementById('basis-config-db');
+const configBasisGAConfigOutput = document.getElementById('basis-config-ga');
+const configBasisCCConfigOutput = document.getElementById('basis-config-cc');
+const configBasisHNConfigOutput = document.getElementById('basis-config-hn');
 
 // Set defaults
 function configSwitchToGeneral() {
@@ -377,17 +383,6 @@ configTrimInductivePartToogle.addEventListener('input', (e) => {
     // Run DRT once value is changed
     drtAnalysis();
 })
-
-configAlphaInputSlider.value = 0.92;
-configAlphaOutput.textContent = 0.92;
-
-configAlphaInputSlider.addEventListener('input', (e) => {
-    const alpha = parseFloat(e.target.value);
-    configAlphaOutput.textContent = alpha;
-
-    // Run DRT once value is changed
-    drtAnalysis();
-});
 
 configTauMinInputSlider.value = -6;
 configTauMinOutput.textContent = formatExp(-6);
@@ -433,6 +428,57 @@ function validateTauRange() {
 
     tauWarningElement.hidden = isValid;
 }
+
+function toggleBasisConfig(basisType = 'basis-cc') {
+    console.log(basisType);
+    switch (basisType) {
+        case 'basis-db':
+            configBasisDBConfigOutput.style.display = 'block';
+            configBasisGAConfigOutput.style.display = 'hidden';
+            configBasisCCConfigOutput.style.display = 'hidden';
+            configBasisHNConfigOutput.style.display = 'hidden';
+            break;
+        case 'basis-ga':
+            configBasisDBConfigOutput.style.display = 'hidden';
+            configBasisGAConfigOutput.style.display = 'block';
+            configBasisCCConfigOutput.style.display = 'hidden';
+            configBasisHNConfigOutput.style.display = 'hidden';
+            break;
+        case 'basis-hn':
+            configBasisDBConfigOutput.style.display = 'hidden';
+            configBasisGAConfigOutput.style.display = 'hidden';
+            configBasisCCConfigOutput.style.display = 'hidden';
+            configBasisHNConfigOutput.style.display = 'block';
+            break;
+        default: // Cole-Cole
+            configBasisDBConfigOutput.style.display = 'hidden';
+            configBasisGAConfigOutput.style.display = 'hidden';
+            configBasisCCConfigOutput.style.display = 'block';
+            configBasisHNConfigOutput.style.display = 'hidden';
+            break;
+    }
+}
+
+// Set default
+toggleBasisConfig();
+
+configBasisTypeSelect.addEventListener('change', (e) => {
+    const basisType = e.target.value; // basis-db, basis-ga, basis-cc, basis-hn
+
+    // Depending on the basis type, show the relevant configs
+    toggleBasisConfig(basisType);
+})
+
+configAlphaInputSlider.value = 0.92;
+configAlphaOutput.textContent = 0.92;
+
+configAlphaInputSlider.addEventListener('input', (e) => {
+    const alpha = parseFloat(e.target.value);
+    configAlphaOutput.textContent = alpha;
+
+    // Run DRT once value is changed
+    drtAnalysis();
+});
 
 /**
  * Handle the DRT computations and stuff
