@@ -61,9 +61,14 @@
                     <details name="config">
                         <summary>Options</summary>
                         <article>
+                            <div role="group">
+                                <button>General</button>
+                                <button class="outline">Basis functions</button>
+                            </div>
+
                             <fieldset>
                                 <label>
-                                    <input name="treimInductivePart" id="config-trimInductivePart" type="checkbox" role="switch" checked/>
+                                    <input name="trimInductivePart" id="config-trimInductivePart" type="checkbox" role="switch" checked/>
                                     Trim inductive impedance data
                                 </label>
                             </fieldset>
@@ -102,6 +107,7 @@
                                 DRT resolution (points per decade): <span class="param" id="configval-ppd">N/A</span>
                                 <input type="range" id="config-ppd" min="10" max="200", step="10" value="40"/>
                             </label>
+                            <small>Increasing the resolution yields smoother DRTs (e.g., for export) while leading to longer computation times.</small>
                         </article>
                     </details>
 
