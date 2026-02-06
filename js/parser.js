@@ -26,6 +26,11 @@ function parseFile(text, filename) {
         parsed = parseStandardizedCSV(text);
     }
 
+    // In case of emergency; error handling is covered by the main script (hopefully)
+    if (!parsed) {
+        return false;
+    }
+
     // Get index near R0 (for trimming)
     function findIndexOfFirstNegativeIm(freq, zimag) {
         // Create sorted pairs
@@ -88,6 +93,12 @@ function parseGamryDTA(text) {
 
     const metadata = {};
     let lineIndex = 1;
+
+    // Directly catch some main problems
+    if (!lines[lineIndex].includes('EIS')) {
+        // throw new Error('Invalid file type.');
+        return false;
+    }
 
     // First step: Header stuff (until OCVCURVE or ZCURVE)
     while (lineIndex < lines.length) {

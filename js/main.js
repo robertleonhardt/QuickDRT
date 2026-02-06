@@ -69,6 +69,8 @@ const openDialogFiletypesLink = document.getElementById('open-dialog-filetypes')
 const dialogFiletypesDisplay = document.getElementById('dialog-filetypes');
 const dialogFiletypesCloseLink = document.getElementById('dialog-filetypes-close');
 
+const markErrorFiletypeOutput = document.getElementById('error_filetype');
+
 // Set defaults
 function setDefaultParameters() {
     configSwitchToGeneral();
@@ -106,6 +108,7 @@ function setDefaultParameters() {
 
     markWarningBasisDBOutput.style.display = 'none';
     markWarningBasisGAOutput.style.display = 'none';
+    markErrorFiletypeOutput.style.display = 'none';
 }
 
 // Helper functions
@@ -561,6 +564,11 @@ Dropzone.options.eisupload = {
                 // Load EIS data
                 const eisDataParsed = parseFile(e.target.result, file.name);
 
+                if (!eisDataParsed) {
+                    markErrorFiletypeOutput.style.display = 'flex';
+                    return false;
+                }
+
                 // Setup DRT
                 const frequencyData = eisDataParsed.data.map(d => d.freq);
                 const impedanceData = {
@@ -588,13 +596,12 @@ Dropzone.options.eisupload = {
     },
 
     accept: function(file, done) {
-        if (file.name == 'biologic.csv') {
-            done('Not yet');
-        } else {
-            done();
-        }
+        // Disable older errors
+        markErrorFiletypeOutput.style.display = 'none';
+        done();
     }
 };
+
 
 /**
  * Handle the DRT computations and stuff
