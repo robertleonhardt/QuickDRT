@@ -33,6 +33,7 @@ class DRT {
         const solveOnStart = options.solve ?? true;
 
         // Sort data in ascending order
+        // Note, the changes are done in-place
         if (this.inputFrequencyData[0] < this.inputFrequencyData[1]) {
             this.inputFrequencyData.reverse();
             this.inputImpedanceData.re.reverse();

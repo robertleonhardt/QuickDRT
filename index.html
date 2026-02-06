@@ -34,8 +34,8 @@
        		<div class="grid main-grid">
         		<div class="left-pane">
                     <details name="upload" open>
-                        <mark class="error" id="error_filetype"><svg width="20" height="20"><use href="#icon-warning"></use></svg> Invalid filetype - please try again.</mark>
                         <summary><svg width="20" height="20"><use href="#icon-import"></use></svg> Select EIS data</summary>
+                        <mark class="error" id="error_filetype"><svg width="20" height="20"><use href="#icon-warning"></use></svg> Invalid filetype - please try again.</mark>
                         <form action="#" class="dropzone" id="eisupload"></form>
                         <a href="#" id="open-dialog-filetypes">Supported data types</a>
                     </details>
@@ -92,7 +92,7 @@
                                 
                                 <label>
                                     Minimum time constant (in seconds): <span class="param" id="configval-tauMin">N/A</span>
-                                    <input type="range" id="config-tauMin" min="-6" max="6" step="1" value="-3"/>
+                                    <input type="range" id="config-tauMin" min="-6" max="6" step="1" value="-6"/>
                                 </label>
                                 <label>
                                     Maximum time constant (in seconds): <span class="param" id="configval-tauMax">N/A</span>
@@ -155,7 +155,7 @@
                                     <hr />
                                     <label>
                                         Full-width at half maximum (FWHM): <span class="param" id="configval-ga-fwhm">N/A</span>
-                                        <input type="range" id="config-ga-fwhm" min="0.01" max="0.99" step="0.01" value="0.2"/>
+                                        <input type="range" id="config-ga-fwhm" min="0.01" max="0.99" step="0.01" value="0.4"/>
                                         <br />
                                         <small class="config-info"><a href="https://en.wikipedia.org/wiki/Full_width_at_half_maximum" target="_blank">FWHM</a> is a parameter used to describe the width of a Gaussian.</small>
                                     </label>
@@ -190,7 +190,7 @@
                                     
                                     <label>
                                         DRT shape parameter (β): <span class="param" id="configval-hn-beta">N/A</span>
-                                        <input type="range" id="config-hn-beta" min="0.01" max="1" step="0.01" value="0.9"/>
+                                        <input type="range" id="config-hn-beta" min="0.01" max="1" step="0.01" value="0.8"/>
                                         <br />
                                         <small class="config-info">For β = 1, this basis reduces to the Cole-Cole relaxation basis. For smaller values, the basis functions become more asymmetric, resembling more heterogeneous processes (<a href="https://doi.org/10.1016/S0167-2738(02)00185-6" target="_blank">Gerischer elements</a>, etc.).</small>
                                     </label>

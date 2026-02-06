@@ -59,14 +59,31 @@ function parseFile(text, filename) {
 function parseStandardizedCSV(text) {
     const lines = text.trim().split('\n');
 
+    let metadataRaw = {}
+    let metaDate = false;
+    let metaTime = false;
+
     // 0th line is JSON metadata for the file
+    let dataStartRow = 2;
     const metaline = lines[0]
-    const metadataRaw = JSON.parse(metaline.slice(1)); // Remove leading #
-    const dt = splitStandardizedCSVDateTime(metadataRaw.date_testbegin_datetime);
+    if (metaline.startsWith('#{')) {
+        metadataRaw = JSON.parse(metaline.slice(1)); // Remove leading #
+
+        // Handle datetime
+        if (metadataRaw.date_testbegin_datetime) {
+            const dt = splitStandardizedCSVDateTime(metadataRaw.date_testbegin_datetime);
+            metaTime = dt.time;
+            metaDate = dt.date;
+        }
+    } else {
+        dataStartRow = 1;
+    }
+    
+    
 
     // 1st line is ignored, since structure is clear; after that, there should be data
     const data = [];
-    for (let i = 2; i < lines.length; i++) {
+    for (let i = dataStartRow; i < lines.length; i++) {
         const values = lines[i].split(',');
         data.push({
             freq: parseFloat(values[0]),
@@ -76,11 +93,11 @@ function parseStandardizedCSV(text) {
     }
 
     const metadata = {
-        cellId: metadataRaw.cell_id,
-        testId: metadataRaw.test_id,
-        label: metadataRaw.test_id,
-        date: dt.date,
-        time: dt.time,
+        cellId: metadataRaw.cell_id ?? 'N/A',
+        testId: metadataRaw.test_id ?? 'N/A',
+        label: metadataRaw.test_id ?? 'N/A',
+        date: metaDate || 'N/A',
+        time: metaTime || 'N/A',
     }
 
     return { metadata, data }

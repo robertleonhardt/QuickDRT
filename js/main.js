@@ -97,8 +97,8 @@ function setDefaultParameters() {
     configBasisHNAlphaInputSlider.value = 0.92;
     configBasisHNAlphaOutput.textContent = 0.92;
 
-    configBasisHNBetaInputSlider.value = 0.92;
-    configBasisHNBetaOutput.textContent = 0.92;
+    configBasisHNBetaInputSlider.value = 0.8;
+    configBasisHNBetaOutput.textContent = 0.8;
 
     configEpsilonInputSlider.value = -6; // Will be treated as zero
     configEpsilonOutput.textContent = 'Off'; // Will be treated as zero
@@ -360,7 +360,7 @@ function plotEISdata(impedanceData, impedanceBack, impedanceProcessList) {
     const processImpedanceDataList = [];
     let processImpedanceIndex = 0;
 
-    const colorMap = getViridisPlotColors(impedanceProcessList.length, 0.3);
+    const colorMap = getViridisPlotColors(impedanceProcessList.length);
 
     for (const processImpedance of impedanceProcessList) {
         const processColor = colorMap[processImpedanceIndex]; // colors.fit
@@ -461,7 +461,7 @@ function plotDRTdata(drt, drtPeakList) {
     const peakDataList = [];
     let peakIndex = 0;
 
-    const colorMap = getViridisPlotColors(drtPeakList.length, 1);
+    const colorMap = getViridisPlotColors(drtPeakList.length);
 
     for (const peak of drtPeakList) {
         const processColor = colorMap[peakIndex]; // colors.fit
@@ -896,11 +896,17 @@ function buildMetadataJSON() {
         C_eq_F: peak.C
     }));
 
+    // Get DRT params
+    const drtParams = {};
+    for (const [key, param] of Object.entries(lastDRTResult.getPrimaryParametersAsString())) {
+        drtParams[key] = param.value;
+    }
+
     return {
         label: eisData.metadata.label,
         date: eisData.metadata.date,
         filename: eisData.file.name,
-        alpha: lastDRTResult.drt.alpha,
+        ...drtParams,
         tau_min_s: Math.pow(10, parseFloat(configTauMinInputSlider.value)),
         tau_max_s: Math.pow(10, parseFloat(configTauMaxInputSlider.value)),
         drt_resolution_ppd: parseFloat(configPpdInputSlider.value),
