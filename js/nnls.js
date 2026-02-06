@@ -1,13 +1,13 @@
 /**
  * Non-negative least squares solver (NNLS)
- * Lawson-Hansin algorithm implementation for js
+ * Lawson-Hanson algorithm implementation for js
  * The implementation was supported by Claude Code, btw.
  * 
  * Solves: min||Ax-b||² with x >= 0 in all components
  * 
  * @param {Matrix} A - Coefficient matrix (m x n)
  * @param {number[]} b - Right-hand side vector (length m)
- * @pram {object} options - Settings
+ * @param {object} options - Settings
  * @returns {object} { x: solution vector, residualNorm: ||Ax-b|| }
  */
 
@@ -57,7 +57,7 @@ function nnls(A, b, options = {}) {
 
         // Inner loop: solve least squares on P, ensure non-negativity
         while (true) {
-            // Solve leas squares: A[:,P] * z_P = b
+            // Solve least squares: A[:,P] * z_P = b
             const pIndices = Array.from(P).sort((a, b) => a - b)
             const Ap = extractColumns(A, pIndices);
             const zP = solveLeastSquares(Ap, b);
@@ -144,7 +144,7 @@ function extractColumns(A, indices) {
 }
 
 /**
- * Ordinary leasr squares (min||Ax-b||²)
+ * Ordinary least squares (min||Ax-b||²)
  */
 function solveLeastSquares(A, b) {
     const QR = mlMatrix.QrDecomposition;

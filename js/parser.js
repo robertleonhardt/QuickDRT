@@ -70,7 +70,7 @@ function parseStandardizedCSV(text) {
         })
     }
 
-    metadata = {
+    const metadata = {
         cellId: metadataRaw.cell_id,
         testId: metadataRaw.test_id,
         label: metadataRaw.test_id,
@@ -113,6 +113,7 @@ function parseGamryDTA(text) {
         // Extract metadata
         switch (keyword) {
             case 'TAG':
+                let mode = 'geis';
                 if (value.includes('HYBRID')) {
                     mode = 'heis'; // Holy hybrid eis
                 } else if (value.includes('POT')) {
@@ -180,7 +181,7 @@ function parseGamryDTA(text) {
         
         // Parse data
         while (lineIndex < lines.length && lines[lineIndex].startsWith('\t')) {
-            lineColumns = lines[lineIndex].split('\t');
+            const lineColumns = lines[lineIndex].split('\t');
 
             ocpTime.push(parseFloat(lineColumns[timeIndex]));
             ocpVoltage.push(parseFloat(lineColumns[voltageIndex]));
@@ -193,8 +194,8 @@ function parseGamryDTA(text) {
     // Store some more information
     if (ocpVoltage.length > 5) {
         // Only consider last 5 values
-        lastOcpVoltagePoints = ocpVoltage.slice(-5);
-        lastOcpTempPoints = ocpTemp.slice(-5);
+        const lastOcpVoltagePoints = ocpVoltage.slice(-5);
+        const lastOcpTempPoints = ocpTemp.slice(-5);
         metadata.meanPreTestOCP_V = lastOcpVoltagePoints.reduce((a, b) => a + b) / lastOcpVoltagePoints.length;
         metadata.meanPreTestTemp_degC = lastOcpTempPoints.reduce((a, b) => a + b) / lastOcpTempPoints.length;
     } else {
@@ -227,7 +228,7 @@ function parseGamryDTA(text) {
         
         // Parse data
         while (lineIndex < lines.length && lines[lineIndex].startsWith('\t')) {
-            lineColumns = lines[lineIndex].split('\t');
+            const lineColumns = lines[lineIndex].split('\t');
 
             zFrequency.push(parseFloat(lineColumns[frequencyIndex]));
             zReal.push(parseFloat(lineColumns[zRealIndex]));

@@ -15,7 +15,7 @@ const configButtonReset = document.getElementById('config-button-reset');
 const configContainerGeneral = document.getElementById('config-group-general');
 const configContainerBasis = document.getElementById('config-group-basis');
 
-const configTrimInductivePartToogle = document.getElementById('config-trimInductivePart');
+const configTrimInductivePartToggle = document.getElementById('config-trimInductivePart');
 
 const configTauMinInputSlider = document.getElementById('config-tauMin');
 const configTauMinOutput = document.getElementById('configval-tauMin');
@@ -65,10 +65,14 @@ const openDialogAboutLink = document.getElementById('open-dialog-about');
 const dialogAboutDisplay = document.getElementById('dialog-about');
 const dialogAboutCloseLink = document.getElementById('dialog-about-close');
 
+const openDialogFiletypesLink = document.getElementById('open-dialog-filetypes');
+const dialogFiletypesDisplay = document.getElementById('dialog-filetypes');
+const dialogFiletypesCloseLink = document.getElementById('dialog-filetypes-close');
+
 // Set defaults
 function setDefaultParameters() {
     configSwitchToGeneral();
-    configTrimInductivePartToogle.checked = true;
+    configTrimInductivePartToggle.checked = true;
 
     configTauMinInputSlider.value = -6;
     configTauMinOutput.textContent = formatExp(-6);
@@ -171,7 +175,7 @@ configButtonReset.addEventListener('click', (e) => {
     drtAnalysis();
 });
 
-configTrimInductivePartToogle.addEventListener('input', drtAnalysis);
+configTrimInductivePartToggle.addEventListener('input', drtAnalysis);
 
 configTauMinInputSlider.addEventListener('input', (e) => {
     const tauMin = parseFloat(e.target.value);
@@ -265,9 +269,18 @@ dialogAboutCloseLink.addEventListener('click', (e) => {
     dialogAboutDisplay.open = false;
 });
 
+openDialogFiletypesLink.addEventListener('click', (e) => {
+    dialogFiletypesDisplay.open = true;
+});
+
+dialogFiletypesCloseLink.addEventListener('click', (e) => {
+    dialogFiletypesDisplay.open = false;
+});
+
 // Set defaults at the beginning
 setDefaultParameters();
 dialogAboutDisplay.open = false;
+dialogFiletypesDisplay.open = false;
 
 /*
 Plotting EIS data with plotly.js
@@ -286,7 +299,7 @@ function getLayoutColors() {
     }
 }
 
-function getViridisPlotColors(n, alpha = 1) {
+function getViridisPlotColors(n) {
     // Some viridis colors
     const viridis = [
         [0.0, 68, 1, 84],
@@ -467,7 +480,7 @@ function plotDRTdata(drt, drtPeakList) {
     }
     
 
-    // Setup EIS plot
+    // Setup DRT plot
     Plotly.newPlot('drtplot', [...peakDataList, {
         x: drt.tau,
         y: drt.gammaHat.map(x => 1000 * x), 
@@ -513,7 +526,7 @@ function plotDRTdata(drt, drtPeakList) {
         responsive: true,
         toImageButtonOptions: {
             format: 'svg',
-            filename: 'eisdata'
+            filename: 'drtdata'
         }
     })
 }
@@ -601,7 +614,7 @@ function drtAnalysis() {
     const configTauMax = Math.pow(10, parseFloat(configTauMaxInputSlider.value));
     const configTauRangePointsPerDecade = parseFloat(configPpdInputSlider.value);
 
-    const epsilon = (configEpsilon > -6) ? formatExp(configEpsilon) : false;
+    const epsilon = (configEpsilon > -6) ? Math.pow(10, parseFloat(configEpsilon)) : false;
 
     let drt;
     switch (configBasisType) {
@@ -656,7 +669,7 @@ function drtAnalysis() {
     // Trim inductive part of EIS data, if requested
     let eisDataImpedance = eisData.impedanceData;
 
-    if (configTrimInductivePartToogle.checked === true && eisData.transitionIndex > 0) {
+    if (configTrimInductivePartToggle.checked === true && eisData.transitionIndex > 0) {
         // Sort data
         const paired = eisData.frequencyData.map((f, i) => ({
             freq: f,
@@ -666,7 +679,8 @@ function drtAnalysis() {
         paired.sort((a, b) => b.freq - a.freq); // High to low frequency
 
         // Trim data
-        const trimmed = paired.slice(eisData.transitionIndex - 3);
+        const trimOffset = (eisData.transitionIndex - 3 > 0) ? -3 : 0;
+        const trimmed = paired.slice(eisData.transitionIndex + trimOffset);
         eisDataImpedance = {
             re: trimmed.map(v => v.re),
             im: trimmed.map(v => v.im)
@@ -684,11 +698,11 @@ function drtAnalysis() {
     // Plot and output data
     plotEISdata(eisDataImpedance, drt.impedanceCalculated, impedanceProcessList);
     plotDRTdata(drt, drtPeakList);
-    updateMetadataDispaly(eisData.metadata, eisData.file);
+    updateMetadataDisplay(eisData.metadata, eisData.file);
     // console.log(eisData);
 
     // Add hover details
-    setupLinkedHoverEvents(drtPeakList, drt.alpha);
+    setupLinkedHoverEvents(drtPeakList, drt.getPrimaryParametersAsString());
 
     // Activate export buttons
     exportEISDataButton.disabled = false;
@@ -755,7 +769,7 @@ document.addEventListener('mousemove', (e) => {
 })
 
 // Tooltip function
-function setupLinkedHoverEvents(drtPeakList, alpha) {
+function setupLinkedHoverEvents(drtPeakList, drtParametersAsString) {
     const eisPlotDiv = document.getElementById('eisplot');
     const drtPlotDiv = document.getElementById('drtplot');
     const tooltip = document.getElementById('drt-process-tooltip');
@@ -773,13 +787,15 @@ function setupLinkedHoverEvents(drtPeakList, alpha) {
         const rFormatted = (1000 * peak.R).toPrecision(4);
         const cFormatted = peak.C.toPrecision(4);
 
+        const paramRows = Object.values(drtParametersAsString).map(p => `<tr><td>${p.name}</td><td style="padding-left: 10px">${p.value}</td></tr>`).join('');
+
         tooltip.innerHTML = `
-            <strong style="color: ${colorMap[traceIndex]}$">Process p${traceIndex + 1}</strong>
+            <strong style="color: ${colorMap[traceIndex]}">Process p${traceIndex + 1}</strong>
             <table style="margin: 4px 0 0 0; border-collapse: collapse">
                 <tr><td>τ<sub>p,${traceIndex + 1}</sub></td><td style="padding-left: 10px">${tauFormatted} s</td></tr>
                 <tr><td>R<sub>p,${traceIndex + 1}</sub></td><td style="padding-left: 10px">${rFormatted} mΩ</td></tr>
                 <tr><td>C<sub>eq,p,${traceIndex + 1}</sub></td><td style="padding-left: 10px">${cFormatted} F</td></tr>
-                <tr><td>α</td><td style="padding-left: 10px">${alpha}</td></tr>
+                ${paramRows}
             </table>
         `;
 
@@ -841,13 +857,19 @@ function setupLinkedHoverEvents(drtPeakList, alpha) {
 }
 
 // Function to show information
-function updateMetadataDispaly(metadata, file) {
-    metadataFilenameDisplay.textContent = file.name;
-    metadataLabelDisplay.textContent = metadata.label;
-    metadataDateDisplay.textContent = metadata.date;
-    metadataMeanOCVDisplay.textContent = metadata.meanPreTestOCP_V.toPrecision(4) ?? 'N/A';
-    metadataMeanTempDisplay.textContent = metadata.meanPreTestTemp_degC.toPrecision(4) ?? 'N/A';
-    metadataVACDisplay.textContent = metadata.vac_mV ?? 'N/A';
+function updateMetadataDisplay(metadata, file) {
+    // Common data
+    metadataFilenameDisplay.textContent = file.name ?? 'N/A';
+    metadataLabelDisplay.textContent = metadata.label ?? 'N/A';
+    metadataDateDisplay.textContent = metadata.date ?? 'N/A';
+
+    // Nice-to-have data
+    const meanPreTestOCP_V = (metadata.meanPreTestOCP_V > 0) ? metadata.meanPreTestOCP_V.toPrecision(4) : 'N/A';
+    const meanPreTestTemp_degC = (metadata.meanPreTestTemp_degC > 0) ? metadata.meanPreTestTemp_degC.toPrecision(4) : 'N/A';
+    const vac_mV = (metadata.vac_mV > 0) ? metadata.vac_mV : 'N/A';
+    metadataMeanOCVDisplay.textContent = meanPreTestOCP_V;
+    metadataMeanTempDisplay.textContent = meanPreTestTemp_degC;
+    metadataVACDisplay.textContent = vac_mV;
 }
 
 // Some helpers

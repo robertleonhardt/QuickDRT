@@ -48,7 +48,7 @@ class DRT {
 
         // Get the Ohmic resistance of the impedance data
         // slice().reverse() returns a copied, flipped version of the data
-        // This is nessecary as the author still is not capable of interpreting in ascending data
+        // This is necessary as the author still is not capable of interpreting in ascending data
         // The copying (slice()) ensure that we won't permanently re-sort the data
         this.ROhm = this._interp(0, this.inputImpedanceData.im.slice().reverse(), this.inputImpedanceData.re.slice().reverse());
         
@@ -140,7 +140,7 @@ class DRT {
 
         // Apply regularization, if asked
         if (epsilon) {
-            const regularizationMatrix = this._getRegularizationMatrix().mulS(this.epsilon);
+            const regularizationMatrix = this._getRegularizationMatrix().mulS(epsilon);
             stackedKernelMatrix = this._vstack(stackedKernelMatrix, regularizationMatrix);
             stackedImpedanceVector = [...stackedImpedanceVector, ...Array(this.tau.length).fill(0)];
         }
@@ -149,7 +149,7 @@ class DRT {
         const result = nnls(stackedKernelMatrix, stackedImpedanceVector);
 
         // Now, that we have the weight vector, we gonna refine it by capping values outside of whats interesting
-        // (see tauMin and tauMax) and merge neightboring weights to avoid "double peaks"
+        // (see tauMin and tauMax) and merge neighboring weights to avoid "double peaks"
         const wHatRaw = result.x;
         const wHat = this._refineWeightVector(wHatRaw, tauMin, tauMax);
 
@@ -213,7 +213,7 @@ class DRT {
     }
 
     _getRegularizationMatrix() {
-        // This should be an identiy matrix
+        // This should be an identity matrix
         return Matrix.eye(this.tau.length);
     }
 
@@ -245,7 +245,7 @@ class DRT {
             // Get max' index
             const indexMax = wHatStripped.indexOf(Math.max(...wHatStripped));
 
-            // Get window around this maximum to finid peaks to consider
+            // Get window around this maximum to find peaks to consider
             let indexLower = indexMax;
             let indexUpper = indexMax;
             while (indexLower > 0 && wHatStripped[indexLower - 1] > 0) {
@@ -311,7 +311,7 @@ class DRT {
             const RPeak = this._trapz(gammaHatPeak, this.lnTauOverTau0);
             const CPeak = this._getCapacitance(tauPeak, RPeak);
 
-            // Filter for tieniest resistances (we don't want them)
+            // Filter for tiniest resistances (we don't want them)
             if (RPeak < 1e-5) {
                 continue;
             }
@@ -400,6 +400,12 @@ class DebyeDRT extends DRT {
         return [];
     }
 
+    getPrimaryParametersAsString() {
+        return {
+            epsilon: { name: 'ε', value: this.epsilon }
+        }
+    }
+
 }
 
 class GaussDRT extends DRT {
@@ -455,6 +461,13 @@ class GaussDRT extends DRT {
         const im = [];
 
         return { re, im };
+    }
+
+    getPrimaryParametersAsString() {
+        return {
+            fwhm: { name: 'FWHM', value: this.fwhm },
+            epsilon: { name: 'ε', value: this.epsilon }
+        }
     }
 
 }
@@ -526,6 +539,13 @@ class ColeColeDRT extends DRT {
         }
 
         return { re, im };
+    }
+
+    getPrimaryParametersAsString() {
+        return {
+            alpha: { name: 'α', value: this.alpha },
+            epsilon: { name: 'ε', value: this.epsilon }
+        }
     }
 
 }
@@ -607,6 +627,14 @@ class HavriliakNegamiDRT extends DRT {
         }
 
         return { re, im };
+    }
+
+    getPrimaryParametersAsString() {
+        return {
+            alpha: { name: 'α', value: this.alpha },
+            beta: { name: 'β', value: this.beta },
+            epsilon: { name: 'ε', value: this.epsilon }
+        }
     }
 
 }

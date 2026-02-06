@@ -66,7 +66,7 @@ button {
 }
 
 button.config-menu {
-    font-size: normal;
+    font-size: smaller;
     padding: 0.2rem 1rem;
 }
 
@@ -117,7 +117,7 @@ span.param {
 }
 
 mark.notice {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     gap: 0.4rem;

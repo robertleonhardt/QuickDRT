@@ -36,6 +36,7 @@
                     <details name="upload" open>
                         <summary><svg width="20" height="20"><use href="#icon-import"></use></svg> Select EIS data</summary>
                         <form action="#" class="dropzone" id="eisupload"></form>
+                        <a href="#" id="open-dialog-filetypes">Supported data types</a>
                     </details>
                     
                     <hr />
@@ -97,7 +98,7 @@
                                     <input type="range" id="config-tauMax" min="-6" max="6" step="1" value="6"/>
                                 </label>
                                 <small id="tau-warning" class="warning" hidden>Note: DRT computation collapses for τ<sub>min</sub> ≥ τ<sub>max</sub><br /></small>
-                                <small class="config-info">Narrowing the time constant range can be used to eliminated high-frequency artifacts or to exclude processes fitted to the diffusion part of the impedance.</small>
+                                <small class="config-info">Narrowing the time constant range can be used to eliminate high-frequency artifacts or to exclude processes fitted to the diffusion part of the impedance.</small>
 
                                 <hr />
                                 
@@ -116,7 +117,7 @@
                                     <br />
                                     <small class="config-info">
                                         Higher values result in more aggressive regularization (and potentially smearing). 
-                                        Setting this value to 0 deactivates regularization, which is typically a good choice for non-Debye bases.
+                                        Setting this value to "Off" (left slider position) deactivates regularization, which is typically a good choice for non-Debye bases.
                                         NOTE: Regularization slows down the computation.
                                     </small>
                                 </label>
@@ -220,7 +221,7 @@
 		</main>
 
         <!-- More content (modals) -->
-        <dialog id="dialog-about" open>
+        <dialog id="dialog-about">
             <article>
                 <div class="head">
                     <h2>About</h2>
@@ -228,7 +229,7 @@
                 </div>
                 <p>
                     QuickDRT is a fast and easy-to-use tool (or demo at this point) to compute distribution of relaxation time functions (DRTs) from measured impedance data.
-                    In an attempt to make this technique more accessible, it is build on a JavaScript implementation of <a href="https://github.com/robertleonhardt/PyDRT" target="_blank">PyDRT</a>, so it runs without any Python backend in the browser (even on mobile devices).
+                    In an attempt to make this technique more accessible, it is built on a JavaScript implementation of <a href="https://github.com/robertleonhardt/PyDRT" target="_blank">PyDRT</a>, so it runs without any Python backend in the browser (even on mobile devices).
                     It can also be downloaded (see <a href="https://github.com/robertleonhardt/QuickDRT" target="_blank">github.com/robertleonhardt/QuickDRT</a>) for offline use (handy for Gamry computers, though).
                 </p>
                 <p>
@@ -248,14 +249,14 @@
                 <hr />
 
                 <p>
-                    Main references & acknowlegdements:
+                    Main references & acknowledgements:
                     <ul>
                         <li>
                             Wan, T. H., et al. (2015). "Influence of the Discretization Methods on the Distribution of Relaxation Times Deconvolution: Implementing Radial Basis Functions with DRTtools." Electrochimica Acta 184: 483-499. <br />
                             <small>(Basis function DRT reconstruction)</small>
                         </li>
                         <li>
-                            T. Ticher. <a href="https://github.com/Polarographica/Polarographica_program" target="_blank">https://github.com/Polarographica/Polarographica_program</a> <br />
+                            T. Tichter. <a href="https://github.com/Polarographica/Polarographica_program" target="_blank">https://github.com/Polarographica/Polarographica_program</a> <br />
                             <small>(Analytical basis function; Cole-Cole and Havriliak-Negami)</small>
                         </li>
                     </ul>
@@ -267,6 +268,38 @@
                         <li><a href="https://claude.ai/" target="_blank">claude.ai</a> <small>(JS-implementation of the used <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.nnls.html" target="_blank">NNLS solver</a>)</small></li>
                     </ul>
                     
+                </p>
+            </article>
+        </dialog>
+
+        <dialog id="dialog-filetypes">
+            <article>
+                <div class="head">
+                    <h2>Supported file types</h2>
+                    <span id="dialog-filetypes-close"><svg width="20" height="20"><use href="#icon-close"></use></svg></span>
+                </div>
+                <p>
+                    In the current version, the QuickDRT is created primarily for Gamry-type test data, which are consequently supported natively. 
+                    If you happen to use data from other devices, there is a more generic CSV format, that is supported as well.
+                </p>
+                <hr />
+                <p>Generic CSV file structure compatible with QuickDRT:</p>
+                <pre><code>#{"date_testbegin_datetime": "06.11.2024 18:10:24", "test_id": "02-02A08", "cell_id": "24-24-006"}
+frequency_Hz,z_real_Ohm,z_imag_Ohm
+100019.5,0.077595,0.130926
+79511.72,0.068182,0.1103418
+63105.47,0.0604157,0.0926967
+50214.84,0.0541735,0.0776666
+39902.34,0.0490697,0.0651172
+31699.22,0.0449101,0.0546617
+25136.72,0.041423,0.045863
+19980.47,0.0384077,0.0386171
+15878.91,0.0357307,0.032516
+12597.66,0.0329833,0.0268193
+10019.53,0.0313455,0.0225724
+[...]</code></pre>
+                <p>
+                    Therein, the first comment row can contain any metadata (datetime, cell id, etc.).
                 </p>
             </article>
         </dialog>
