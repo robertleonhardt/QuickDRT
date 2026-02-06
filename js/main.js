@@ -898,7 +898,7 @@ function buildMetadataJSON() {
 
     // Get DRT params
     const drtParams = {};
-    for (const [key, param] of Object.entries(lastDRTResult.getPrimaryParametersAsString())) {
+    for (const [key, param] of Object.entries(lastDRTResult.drt.getPrimaryParametersAsString())) {
         drtParams[key] = param.value;
     }
 
