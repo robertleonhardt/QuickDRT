@@ -71,6 +71,8 @@ const dialogFiletypesCloseLink = document.getElementById('dialog-filetypes-close
 
 const markErrorFiletypeOutput = document.getElementById('error_filetype');
 
+const loadExampleDataLink = document.getElementById('load-example-data');
+
 // Set defaults
 function setDefaultParameters() {
     configSwitchToGeneral();
@@ -278,6 +280,35 @@ openDialogFiletypesLink.addEventListener('click', (e) => {
 
 dialogFiletypesCloseLink.addEventListener('click', (e) => {
     dialogFiletypesDisplay.open = false;
+});
+
+loadExampleDataLink.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    fetch('example_files/gamry_example.DTA')
+        .then(response => response.text())
+        .then(text => {
+            const filename = 'gamry_example.DTA';
+            const eisDataParsed = parseFile(text, filename);
+
+            if (!eisDataParsed) {
+                markErrorFiletypeOutput.style.display = 'flex';
+                return;
+            }
+
+            // Setup DRT
+            const frequencyData = eisDataParsed.data.map(d => d.freq);
+            const impedanceData = {
+                re: eisDataParsed.data.map(d => d.zreal),
+                im: eisDataParsed.data.map(d => d.zimag)
+            };
+
+            // Store data (so it is available outside)
+            eisData = { frequencyData, impedanceData, metadata: eisDataParsed.metadata, transitionIndex: eisDataParsed.transitionIndex, file: file };
+
+            // Run DRT once file is loaded
+            drtAnalysis();
+        });
 });
 
 // Set defaults at the beginning
