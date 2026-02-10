@@ -1,5 +1,11 @@
 # QuickDRT
-QuickDRT is a lightweight, easy-to-use app for computing distribution of relaxation times (DRT) functions from measured impedance spectra.
+A browser-based tool for computing distribution of relaxation times (DRT) functions from measured impedance spectroscopy (EIS) data.
+No installation, no Python backend - just open it in your browser.
+
+**[Try it live](https://robertleonhardt.github.io/QuickDRT/)**
+![QuickDRT screenshot](docs/20260210_screenshot.png)
+
+
 It's JavaScript only, so it runs in the browser without the need for any installation or Python backend - just double-click the index.html file.
 Based on PyDRT (https://github.com/robertleonhardt/PyDRT), it uses basis functions for clean process separation and thus enhanced impedance analysis.
 
