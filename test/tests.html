@@ -8,40 +8,13 @@
         <script src="../js/matrix.umd.min.js" defer></script>
         <script src="../js/nnls.js" defer></script>
         <script src="../js/jsdrt.js" defer></script>
+        <script src="tests.js" defer></script>
         <link rel="stylesheet" href="../css/pico.cyan.min.css">
     	<title>QuickDRT functional testing</title>
 	</head>
 	<body>
-		<pre id="output"></pre>
-        <script>
-            let passed = 0, failed = 0;
-
-            // Main testing function
-            function assert(condition, name) {
-                if (condition) {
-                    passed++;
-                    log(`PASS: ${name}`);
-                } else {
-                    failed++;
-                    log(`FAIL: ${name}`);
-                }
-            }
-
-            // Also test stuff with some tolerance
-            function assertTol(actual, expected, tol, name) {
-                assert(Math.abs(actual - expected) < tol, `${name} (got ${actual}, expected ${expected})`)
-            }
-
-            // Output details
-            function log(message) {
-                document.getElementById('output').textContent += message + '\n';
-            }
-
-            // Main testing
-            log('TEST: _trapz');
-            const drt = new DebyeDRT([100, 10, 1], { re: [0.1, 0.2, 0.3], im: [0.1, 0.2, 0.3] }, { solve: false });
-            assertTol(drt._trapz([1, 1, 1, 1], [0, 2, 5, 10]), 10, 1e-9);
-
-        </script>
+        <main>
+            <pre id="output"></pre>
+        </main>
 	</body>
 </html>
