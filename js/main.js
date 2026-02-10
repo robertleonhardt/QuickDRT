@@ -304,7 +304,7 @@ loadExampleDataLink.addEventListener('click', (e) => {
             };
 
             // Store data (so it is available outside)
-            eisData = { frequencyData, impedanceData, metadata: eisDataParsed.metadata, transitionIndex: eisDataParsed.transitionIndex, file: file };
+            eisData = { frequencyData, impedanceData, metadata: eisDataParsed.metadata, transitionIndex: eisDataParsed.transitionIndex, file: { name: filename } };
 
             // Run DRT once file is loaded
             drtAnalysis();
