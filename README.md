@@ -29,14 +29,14 @@ No installation, no Python backend - just open it in your browser.
 - **Gamry .DTA** - Native support for most Gamry EIS files.
 - **Generic CSV** - You can also use QuickDRT with *.csv files with the following generic header: `frequency_Hz`, `z_real_Ohm`, `z_imag_Ohm`. Optionally, a JSON metadata header can be prepended to the CSV data (i.e., at line 1, followed by the CSV data).
 
-Soo the in-app "Supported data types" information for the CSV specs.
+See the in-app "Supported data types" information for the CSV specs.
 
 
 ## How it works
 
 QuickDRT reconstructs the DRT by discretizing the impedance data using analytical basis functions (Cole-Cole, Havriliak-Negami, and Gauss). This approach yields clean per-process separation while mitigating the need for Tikhonov regularization.
 
-For more beackground information on the process and the used basis functions, see the [underlying publication](https://doi.org/10.1016/j.jpowsour.2025.237403) and the [PyDRT documentation](https://github.com/robertleonhardt/PyDRT).
+For more background information on the process and the used basis functions, see the [underlying publication](https://doi.org/10.1016/j.jpowsour.2025.237403) and the [PyDRT documentation](https://github.com/robertleonhardt/PyDRT).
 
 
 ## Citation
@@ -44,7 +44,7 @@ For more beackground information on the process and the used basis functions, se
 If QuickDRT is useful to your research, please cite:
 
 > Leonhardt, et al. (2025). "Reconstructing the distribution of relaxation times with analytical basis functions" Journal of Power Sources 652, DOI: 10.1016/j.jpowsour.2025.237403
-[DOI:10.1016/j.jpowsour.2025.237403](https://doi.org/10.1016/j.jpowsour.2025.237403)
+> [DOI:10.1016/j.jpowsour.2025.237403](https://doi.org/10.1016/j.jpowsour.2025.237403)
 
 ## Acknowledgements
 
